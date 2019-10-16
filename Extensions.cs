@@ -246,5 +246,78 @@ namespace SDLWrapper
 		{
 			return new RectangleF(rect.x, rect.y, rect.w, rect.h);
 		}
+
+		public static uint ToSDL(this Color color, IntPtr surface)
+		{
+			uint pixel = 0;
+
+#if SAFE_AS_POSSIBLE
+			unsafe
+			{
+				pixel = 
+					SDL_MapRGBA(
+						((SDL_Surface*)surface.ToPointer())->format,
+						color.R,
+						color.G,
+						color.B,
+						color.A);
+			}
+#else
+			SDL_Surface surf = Marshal.PtrToStructure<SDL_Surface>(surface);
+			pixel = color.ToSDL(ref surf);
+#endif
+
+			return pixel;
+		}
+
+		public static uint ToSDL(this Color color, ref SDL_Surface surface)
+		{
+			return SDL_MapRGBA(
+						surface.format,
+						color.R,
+						color.G,
+						color.B,
+						color.A);
+		}
+
+		public static Color ToColorFromSDL(this uint pixel, IntPtr surface)
+		{
+			Color result = Color.Black;
+
+#if SAFE_AS_POSSIBLE
+			unsafe
+			{
+				SDL_GetRGBA(
+					pixel,
+					((SDL_Surface*)surface.ToPointer())->format,
+					out byte r,
+					out byte g,
+					out byte b,
+					out byte a);
+
+				result = Color.FromArgb(a, r, g, b);
+			}
+#else
+			SDL_Surface surf = Marshal.PtrToStructure<SDL_Surface>(surface);
+			result = pixel.ToColorFromSDL(ref surf);
+#endif
+
+			return result;
+		}
+
+		public static Color ToColorFromSDL(
+			this uint pixel,
+			ref SDL_Surface surface)
+		{
+			SDL_GetRGBA(
+				pixel,
+				surface.format,
+				out byte r,
+				out byte g,
+				out byte b,
+				out byte a);
+
+			return Color.FromArgb(a, r, g, b);
+		}
 	}
 }
