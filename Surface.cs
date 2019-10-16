@@ -368,11 +368,6 @@ namespace SDLWrapper
 		{
 			if (!disposedValue)
 			{
-				if (disposing)
-				{
-					// TODO: dispose managed state (managed objects).
-				}
-
 				if (Handle != IntPtr.Zero)
 				{
 					SDL_FreeSurface(Handle);

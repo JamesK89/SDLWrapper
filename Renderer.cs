@@ -11,12 +11,21 @@ namespace SDLWrapper
 {
 	public class Renderer : IDisposable
 	{
-		private Dictionary<IntPtr, Texture> _textures;
+		private static Dictionary<IntPtr, WeakReference<Renderer>> _renderers
+			= new Dictionary<IntPtr, WeakReference<Renderer>>();
+
+		private Dictionary<IntPtr, WeakReference<Texture>> _textures;
 
 		internal Renderer(IntPtr handle)
 		{
-			_textures = new Dictionary<IntPtr, Texture>();
 			Handle = handle;
+
+			_textures = new Dictionary<IntPtr, WeakReference<Texture>>();
+
+			if (!_renderers.ContainsKey(handle))
+			{
+				_renderers.Add(handle, new WeakReference<Renderer>(this));
+			}
 		}
 
 		public IntPtr Handle
@@ -29,23 +38,7 @@ namespace SDLWrapper
 		{
 			get
 			{
-				Texture result = null;
-				IntPtr ptr = SDL_GetRenderTarget(Handle);
-
-				if (ptr != IntPtr.Zero)
-				{
-					if (!_textures.ContainsKey(ptr))
-					{
-						result = new Texture(ptr);
-						_textures.Add(ptr, result);
-					}
-					else
-					{
-						result = _textures[ptr];
-					}
-				}
-
-				return result;
+				return FetchTexture(SDL_GetRenderTarget(Handle));
 			}
 			set
 			{
@@ -137,6 +130,22 @@ namespace SDLWrapper
 				SDL_SetRenderDrawColor(Handle,
 					value.R, value.G, value.B, value.A);
 			}
+		}
+
+		public Texture CreateTextureFromSurface(Surface surface)
+		{
+			Texture result = null;
+
+			IntPtr ptr = 
+				SDL_CreateTextureFromSurface(Handle, surface.Handle);
+
+			if (ptr != IntPtr.Zero)
+			{
+				result = new Texture(ptr);
+				_textures.Add(ptr, new WeakReference<Texture>(result));
+			}
+
+			return result;
 		}
 
 		public void Clear()
@@ -271,6 +280,32 @@ namespace SDLWrapper
 				nativeRects, nativeRects.Length);
 		}
 
+		private Texture FetchTexture(IntPtr handle)
+		{
+			Texture result = null;
+
+			if (handle != IntPtr.Zero)
+			{
+				foreach (KeyValuePair<IntPtr, WeakReference<Renderer>> kvp
+					in _renderers)
+				{
+					if (kvp.Value.TryGetTarget(out Renderer target))
+					{
+						if (target._textures.ContainsKey(handle))
+						{
+							if (!target._textures[handle]
+								.TryGetTarget(out result))
+							{
+								target._textures.Remove(handle);
+							}
+						}
+					}
+				}
+			}
+
+			return result;
+		}
+
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
 
@@ -280,9 +315,13 @@ namespace SDLWrapper
 			{
 				if (_textures != null)
 				{
-					foreach (KeyValuePair<IntPtr, Texture> kvp in _textures)
+					foreach (KeyValuePair<IntPtr, WeakReference<Texture>> kvp 
+						in _textures)
 					{
-						kvp.Value?.Dispose();
+						if (kvp.Value.TryGetTarget(out Texture target))
+						{
+							target?.Dispose();
+						}
 					}
 
 					_textures.Clear();
@@ -291,6 +330,11 @@ namespace SDLWrapper
 
 				if (Handle != IntPtr.Zero)
 				{
+					if (_renderers.ContainsKey(Handle))
+					{
+						_renderers.Remove(Handle);
+					}
+
 					SDL_DestroyRenderer(Handle);
 					Handle = IntPtr.Zero;
 				}

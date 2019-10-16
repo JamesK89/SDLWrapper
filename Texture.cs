@@ -3,6 +3,8 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+using System.Runtime.ConstrainedExecution;
 
 using SDL2;
 using static SDL2.SDL;
@@ -44,11 +46,6 @@ namespace SDLWrapper
 		{
 			if (!disposedValue)
 			{
-				if (disposing)
-				{
-					// TODO: dispose managed state (managed objects).
-				}
-
 				if (Handle != IntPtr.Zero)
 				{
 					SDL_DestroyTexture(Handle);
