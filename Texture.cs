@@ -13,7 +13,9 @@ namespace SDLWrapper
 {
 	public class Texture : IDisposable
 	{
-		internal Texture(IntPtr handle)
+		private WeakReference<Renderer> _renderer;
+
+		internal Texture(IntPtr handle, Renderer renderer)
 		{
 			Handle = handle;
 
@@ -25,6 +27,8 @@ namespace SDLWrapper
 
 			Size = new Size(
 				width, height);
+
+			Renderer = renderer;
 		}
 
 		public IntPtr Handle
@@ -39,6 +43,19 @@ namespace SDLWrapper
 			private set;
 		}
 
+		public Renderer Renderer
+		{
+			get
+			{
+				_renderer.TryGetTarget(out Renderer result);
+				return result;
+			}
+			private set
+			{
+				_renderer = new WeakReference<Renderer>(value);
+			}
+		}
+
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
 
@@ -48,6 +65,7 @@ namespace SDLWrapper
 			{
 				if (Handle != IntPtr.Zero)
 				{
+					Renderer.FreeTexture(Handle);
 					SDL_DestroyTexture(Handle);
 					Handle = IntPtr.Zero;
 				}

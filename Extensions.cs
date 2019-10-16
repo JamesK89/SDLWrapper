@@ -319,5 +319,23 @@ namespace SDLWrapper
 
 			return Color.FromArgb(a, r, g, b);
 		}
+
+		public static SDL_RendererFlip ToSDL(this RenderFlip flip)
+		{
+			SDL_RendererFlip result = 
+				SDL_RendererFlip.SDL_FLIP_NONE;
+
+			if ((flip & RenderFlip.Horizontal) == RenderFlip.Horizontal)
+			{
+				result |= SDL_RendererFlip.SDL_FLIP_HORIZONTAL;
+			}
+
+			if ((flip & RenderFlip.Vertical) == RenderFlip.Vertical)
+			{
+				result |= SDL_RendererFlip.SDL_FLIP_VERTICAL;
+			}
+
+			return result;
+		}
 	}
 }

@@ -187,4 +187,12 @@ namespace SDLWrapper
 		Alt = (AltLeft | AltRight),
 		Shift = (ShiftLeft | ShiftRight)
 	}
+
+	[Flags]
+	public enum RenderFlip
+	{
+		None = 0,
+		Horizontal = 1,
+		Vertical = 2
+	}
 }

@@ -53,7 +53,10 @@ namespace SDLWrapper
 
 		private bool _loaded;
 
-		internal Window()
+		private static Dictionary<IntPtr, WeakReference<Window>> _windows
+			= new Dictionary<IntPtr, WeakReference<Window>>();
+
+		public Window()
 		{
 			_loaded = false;
 
@@ -82,6 +85,8 @@ namespace SDLWrapper
 			Surface = new Surface(SDL_GetWindowSurface(Handle));
 
 			ID = SDL_GetWindowID(Handle);
+
+			_windows.Add(Handle, new WeakReference<Window>(this));
 		}
 
 		public uint ID
@@ -726,57 +731,30 @@ namespace SDLWrapper
 			return result;
 		}
 		
-		public static void DoEvents(
-			IEnumerable<Window> windows,
-			bool clearQueue = false)
+		public static void DoEvents()
 		{
-			List<SDL_Event> eventsList = new List<SDL_Event>(256);
+			WeakReference<Window>[] windows =
+				_windows.Values.ToArray();
 
-			foreach (Window wnd in windows)
+			foreach (WeakReference<Window> weakWindow in windows)
 			{
-				IEnumerable<SDL_Event> nonConsumed =
-					Window.DoEvents(wnd);
-
-				if (nonConsumed != null)
+				if (weakWindow.TryGetTarget(out Window wnd))
 				{
-					eventsList.AddRange(nonConsumed);
+					Window.DoEvents(wnd);
 				}
 			}
-
-			if (clearQueue && eventsList.Count > 0)
-			{
-				SDL_Event[] eventsArray = eventsList.ToArray();
-
-				SDL_PeepEvents(
-					eventsArray, eventsArray.Length,
-					SDL_eventaction.SDL_ADDEVENT,
-					SDL_EventType.SDL_FIRSTEVENT, SDL_EventType.SDL_LASTEVENT);
-			}
 		}
 
-		public void DoEvents()
+		private static bool DoEvents(Window wnd)
 		{
-			SDL_Event[] events = DoEvents(this)?.ToArray() ?? null;
-			
-			if (events != null && events.Length > 0)
-			{
-				SDL_PeepEvents(
-					events, events.Length,
-					SDL_eventaction.SDL_ADDEVENT,
-					SDL_EventType.SDL_FIRSTEVENT, SDL_EventType.SDL_LASTEVENT);
-			}
-		}
-
-		private static IEnumerable<SDL_Event> DoEvents(Window wnd)
-		{
-			List<SDL_Event> returnedEvents = null;
+			bool result = false;
 
 			if (wnd != null)
 			{
-				returnedEvents = new List<SDL_Event>(256);
 
 				SDL_Event[] events = new SDL_Event[256];
 				List<SDL_Event> consumedEvents = new List<SDL_Event>(256);
+				List<SDL_Event> returnedEvents = new List<SDL_Event>(256);
 
 				int numEvents = 0;
 
@@ -797,14 +775,26 @@ namespace SDLWrapper
 						else
 						{
 							consumedEvents.Add(e);
+							result = true;
 						}
 					}
+				}
+
+				if (returnedEvents.Count > 0)
+				{
+					events = returnedEvents.ToArray();
+
+					SDL_PeepEvents(
+						events, events.Length,
+						SDL_eventaction.SDL_ADDEVENT,
+						SDL_EventType.SDL_FIRSTEVENT, 
+						SDL_EventType.SDL_LASTEVENT);
 				}
 
 				wnd.ProcessEvents(consumedEvents);
 			}
 
-			return returnedEvents;
+			return result;
 		}
 
 		private void ProcessEvent(SDL_Event e)
@@ -1028,17 +1018,19 @@ namespace SDLWrapper
 		{
 			if (!disposedValue)
 			{
-				if (disposing)
+				if (Renderer != null)
 				{
-					if (Renderer != null)
-					{
-						Renderer.Dispose();
-						Renderer = null;
-					}
+					Renderer.Dispose();
+					Renderer = null;
 				}
 
 				if (Handle != IntPtr.Zero)
 				{
+					if (_windows.ContainsKey(Handle))
+					{
+						_windows.Remove(Handle);
+					}
+
 					SDL_DestroyWindow(Handle);
 					Handle = IntPtr.Zero;
 				}

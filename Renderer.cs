@@ -38,7 +38,7 @@ namespace SDLWrapper
 		{
 			get
 			{
-				return FetchTexture(SDL_GetRenderTarget(Handle));
+				return FindTexture(SDL_GetRenderTarget(Handle));
 			}
 			set
 			{
@@ -46,7 +46,7 @@ namespace SDLWrapper
 			}
 		}
 		
-		public Size LogicalSize
+		public Size Size
 		{
 			get
 			{
@@ -72,7 +72,7 @@ namespace SDLWrapper
 			}
 		}
 
-		public bool ClippingEnabled
+		public bool IsClippingEnabled
 		{
 			get
 			{
@@ -141,7 +141,7 @@ namespace SDLWrapper
 
 			if (ptr != IntPtr.Zero)
 			{
-				result = new Texture(ptr);
+				result = new Texture(ptr, this);
 				_textures.Add(ptr, new WeakReference<Texture>(result));
 			}
 
@@ -280,12 +280,180 @@ namespace SDLWrapper
 				nativeRects, nativeRects.Length);
 		}
 
-		private Texture FetchTexture(IntPtr handle)
+		public void Copy(Texture texture)
+		{
+			SDL_RenderCopy(Handle, texture.Handle, IntPtr.Zero, IntPtr.Zero);
+		}
+
+		public void Copy(Texture texture, Rectangle destRect)
+		{
+			SDL_Rect r = destRect.ToSDL();
+			SDL_RenderCopy(Handle, texture.Handle, IntPtr.Zero, ref r);
+		}
+
+		public void Copy(Rectangle sourceRect, Texture texture)
+		{
+			SDL_Rect s = sourceRect.ToSDL();
+			SDL_RenderCopy(Handle, texture.Handle, ref s, IntPtr.Zero);
+		}
+
+		public void Copy(
+			Rectangle sourceRect,
+			Texture texture,
+			Rectangle destRect)
+		{
+			SDL_Rect s = sourceRect.ToSDL();
+			SDL_Rect r = destRect.ToSDL();
+			SDL_RenderCopy(Handle, texture.Handle, ref s, ref r);
+		}
+
+		public void Copy(
+			Rectangle sourceRect,
+			Texture texture,
+			Rectangle destRect,
+			double angle,
+			Point center,
+			RenderFlip flip)
+		{
+			SDL_Rect s = sourceRect.ToSDL();
+			SDL_Rect d = destRect.ToSDL();
+			SDL_Point c = center.ToSDL();
+
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				ref s,
+				ref d,
+				angle,
+				ref c,
+				flip.ToSDL());
+		}
+
+		public void Copy(
+			Texture texture,
+			Rectangle destRect,
+			double angle,
+			Point center,
+			RenderFlip flip)
+		{
+			SDL_Rect d = destRect.ToSDL();
+			SDL_Point c = center.ToSDL();
+
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				IntPtr.Zero,
+				ref d,
+				angle,
+				ref c,
+				flip.ToSDL());
+		}
+
+		public void Copy(
+			Rectangle sourceRect,
+			Texture texture,
+			Rectangle destRect,
+			double angle)
+		{
+			SDL_Rect s = sourceRect.ToSDL();
+			SDL_Rect d = destRect.ToSDL();
+
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				ref s,
+				ref d,
+				angle,
+				IntPtr.Zero,
+				SDL_RendererFlip.SDL_FLIP_NONE);
+		}
+
+		public void Copy(
+			Texture texture,
+			double angle)
+		{
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				IntPtr.Zero,
+				IntPtr.Zero,
+				angle,
+				IntPtr.Zero,
+				SDL_RendererFlip.SDL_FLIP_NONE);
+		}
+
+		public void Copy(
+			Texture texture,
+			double angle,
+			Point center,
+			RenderFlip flip)
+		{
+			SDL_Point c = center.ToSDL();
+
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				IntPtr.Zero,
+				IntPtr.Zero,
+				angle,
+				ref c,
+				flip.ToSDL());
+		}
+
+		public void Copy(
+			Texture texture,
+			double angle,
+			RenderFlip flip)
+		{
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				IntPtr.Zero,
+				IntPtr.Zero,
+				angle,
+				IntPtr.Zero,
+				flip.ToSDL());
+		}
+
+		public void Copy(
+			Texture texture,
+			Rectangle destRect,
+			double angle)
+		{
+			SDL_Rect d = destRect.ToSDL();
+
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				IntPtr.Zero,
+				ref d,
+				angle,
+				IntPtr.Zero,
+				SDL_RendererFlip.SDL_FLIP_NONE);
+		}
+		
+		public void Copy(
+			Texture texture,
+			RenderFlip flip)
+		{
+			SDL_RenderCopyEx(
+				Handle,
+				texture.Handle,
+				IntPtr.Zero,
+				IntPtr.Zero,
+				0,
+				IntPtr.Zero,
+				flip.ToSDL());
+		}
+
+		internal static Texture FindTexture(IntPtr handle)
 		{
 			Texture result = null;
 
 			if (handle != IntPtr.Zero)
 			{
+				List<IntPtr> keysToRemove = new List<IntPtr>();
+
 				foreach (KeyValuePair<IntPtr, WeakReference<Renderer>> kvp
 					in _renderers)
 				{
@@ -297,13 +465,31 @@ namespace SDLWrapper
 								.TryGetTarget(out result))
 							{
 								target._textures.Remove(handle);
+								break;
 							}
 						}
 					}
+					else
+					{
+						keysToRemove.Add(kvp.Key);
+					}
 				}
+
+				keysToRemove.ForEach((o) => _renderers.Remove(o));
 			}
 
 			return result;
+		}
+
+		internal static void FreeTexture(IntPtr handle)
+		{
+			Texture result = FindTexture(handle);
+
+			if (result != null && 
+				result.Renderer != null)
+			{
+				result.Renderer._textures.Remove(handle);
+			}
 		}
 
 		#region IDisposable Support
