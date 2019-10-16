@@ -251,7 +251,7 @@ namespace SDLWrapper
 		{
 			uint pixel = 0;
 
-#if SAFE_AS_POSSIBLE
+#if !SAFE_AS_POSSIBLE
 			unsafe
 			{
 				pixel = 
@@ -284,7 +284,7 @@ namespace SDLWrapper
 		{
 			Color result = Color.Black;
 
-#if SAFE_AS_POSSIBLE
+#if !SAFE_AS_POSSIBLE
 			unsafe
 			{
 				SDL_GetRGBA(
