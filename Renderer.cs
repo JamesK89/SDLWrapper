@@ -11,8 +11,11 @@ namespace SDLWrapper
 {
 	public class Renderer : IDisposable
 	{
+		private Dictionary<IntPtr, Texture> _textures;
+
 		internal Renderer(IntPtr handle)
 		{
+			_textures = new Dictionary<IntPtr, Texture>();
 			Handle = handle;
 		}
 
@@ -22,15 +25,31 @@ namespace SDLWrapper
 			private set;
 		}
 
-		public IntPtr Target
+		public Texture Target
 		{
 			get
 			{
-				return SDL_GetRenderTarget(Handle);
+				Texture result = null;
+				IntPtr ptr = SDL_GetRenderTarget(Handle);
+
+				if (ptr != IntPtr.Zero)
+				{
+					if (!_textures.ContainsKey(ptr))
+					{
+						result = new Texture(ptr);
+						_textures.Add(ptr, result);
+					}
+					else
+					{
+						result = _textures[ptr];
+					}
+				}
+
+				return result;
 			}
 			set
 			{
-				SDL_SetRenderTarget(Handle, value);
+				SDL_SetRenderTarget(Handle, value?.Handle ?? IntPtr.Zero);
 			}
 		}
 		
@@ -259,11 +278,23 @@ namespace SDLWrapper
 		{
 			if (!disposedValue)
 			{
+				if (_textures != null)
+				{
+					foreach (KeyValuePair<IntPtr, Texture> kvp in _textures)
+					{
+						kvp.Value?.Dispose();
+					}
+
+					_textures.Clear();
+					_textures = null;
+				}
+
 				if (Handle != IntPtr.Zero)
 				{
 					SDL_DestroyRenderer(Handle);
 					Handle = IntPtr.Zero;
 				}
+
 				disposedValue = true;
 			}
 		}

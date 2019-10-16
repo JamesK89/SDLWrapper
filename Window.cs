@@ -118,7 +118,7 @@ namespace SDLWrapper
 		{
 			set
 			{
-				SDL_SetWindowIcon(Handle, value.Handle);
+				SDL_SetWindowIcon(Handle, value?.Handle ?? IntPtr.Zero);
 			}
 		}
 

@@ -22,8 +22,10 @@ namespace SDLWrapper
 			Handle = handle;
 
 #if SAFE_AS_POSSIBLE
-			_surface = Marshal.PtrToStructure<SDL_Surface>(Handle);
-			Marshal.PtrToStructure<SDL_PixelFormat>(_surface.format);
+			_surface = 
+				Marshal.PtrToStructure<SDL_Surface>(Handle);
+			_format = 
+				Marshal.PtrToStructure<SDL_PixelFormat>(_surface.format);
 #endif
 		}
 
