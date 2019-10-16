@@ -87,6 +87,7 @@
     <Compile Include="Events.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Renderer.cs" />
+    <Compile Include="Surface.cs" />
     <Compile Include="Texture.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>

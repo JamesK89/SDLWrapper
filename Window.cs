@@ -79,6 +79,8 @@ namespace SDLWrapper
 					SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC |
 					SDL_RendererFlags.SDL_RENDERER_TARGETTEXTURE));
 
+			Surface = new Surface(SDL_GetWindowSurface(Handle));
+
 			ID = SDL_GetWindowID(Handle);
 		}
 
@@ -104,6 +106,20 @@ namespace SDLWrapper
 		{
 			get;
 			private set;
+		}
+
+		public Surface Surface
+		{
+			get;
+			private set;
+		}
+
+		public Surface Icon
+		{
+			set
+			{
+				SDL_SetWindowIcon(Handle, value.Handle);
+			}
 		}
 
 		public WindowMode Mode
@@ -417,13 +433,7 @@ namespace SDLWrapper
 		{
 			set
 			{
-				SDL_Rect r = new SDL_Rect();
-
-				r.x = value.X;
-				r.y = value.Y;
-				r.w = value.Width;
-				r.h = value.Height;
-
+				SDL_Rect r = value.ToSDL();
 				SDL_SetTextInputRect(ref r);
 			}
 		}
@@ -715,73 +725,86 @@ namespace SDLWrapper
 
 			return result;
 		}
-
-		internal bool DoEvent(SDL_Event e)
+		
+		public static void DoEvents(
+			IEnumerable<Window> windows,
+			bool clearQueue = false)
 		{
-			bool result = IsEventForMe(e);
+			List<SDL_Event> eventsList = new List<SDL_Event>(256);
 
-			if (result)
+			foreach (Window wnd in windows)
 			{
-				ProcessEvents(new SDL_Event[] { e });
-			}
+				IEnumerable<SDL_Event> nonConsumed =
+					Window.DoEvents(wnd);
 
-			return result;
-		}
-
-		internal int DoEvents(IEnumerable<SDL_Event> events)
-		{
-			int result = 0;
-
-			foreach (SDL_Event e in events)
-			{
-				result += DoEvent(e) ? 1 : 0;
-			}
-
-			return result;
-		}
-
-		public int DoEvents()
-		{
-			SDL_Event[] events = new SDL_Event[256];
-
-			List<SDL_Event> consumedEvents = new List<SDL_Event>(256);
-			List<SDL_Event> returnedEvents = new List<SDL_Event>(256);
-
-			int numEvents = 0;
-
-			while ((numEvents = SDL_PeepEvents(
-				events, events.Length,
-				SDL_eventaction.SDL_GETEVENT,
-				SDL_EventType.SDL_FIRSTEVENT, SDL_EventType.SDL_LASTEVENT))
-				> 0)
-			{
-				for (int i = 0; i < numEvents; i++)
+				if (nonConsumed != null)
 				{
-					SDL_Event e = events[i];
-
-					if (!IsEventForMe(e))
-					{
-						returnedEvents.Add(e);
-					}
-					else
-					{
-						consumedEvents.Add(e);
-					}
+					eventsList.AddRange(nonConsumed);
 				}
 			}
 
-			if (returnedEvents.Count > 0)
+			if (clearQueue && eventsList.Count > 0)
 			{
-				events = returnedEvents.ToArray();
+				SDL_Event[] eventsArray = eventsList.ToArray();
+
+				SDL_PeepEvents(
+					eventsArray, eventsArray.Length,
+					SDL_eventaction.SDL_ADDEVENT,
+					SDL_EventType.SDL_FIRSTEVENT, SDL_EventType.SDL_LASTEVENT);
+			}
+		}
+
+		public void DoEvents()
+		{
+			SDL_Event[] events = DoEvents(this)?.ToArray() ?? null;
+			
+			if (events != null && events.Length > 0)
+			{
 				SDL_PeepEvents(
 					events, events.Length,
 					SDL_eventaction.SDL_ADDEVENT,
 					SDL_EventType.SDL_FIRSTEVENT, SDL_EventType.SDL_LASTEVENT);
 			}
+		}
 
-			ProcessEvents(consumedEvents);
+		private static IEnumerable<SDL_Event> DoEvents(Window wnd)
+		{
+			List<SDL_Event> returnedEvents = null;
 
-			return consumedEvents.Count;
+			if (wnd != null)
+			{
+				returnedEvents = new List<SDL_Event>(256);
+
+				SDL_Event[] events = new SDL_Event[256];
+				List<SDL_Event> consumedEvents = new List<SDL_Event>(256);
+
+				int numEvents = 0;
+
+				while ((numEvents = SDL_PeepEvents(
+					events, events.Length,
+					SDL_eventaction.SDL_GETEVENT,
+					SDL_EventType.SDL_FIRSTEVENT, SDL_EventType.SDL_LASTEVENT))
+					> 0)
+				{
+					for (int i = 0; i < numEvents; i++)
+					{
+						SDL_Event e = events[i];
+
+						if (!wnd.IsEventForMe(e))
+						{
+							returnedEvents.Add(e);
+						}
+						else
+						{
+							consumedEvents.Add(e);
+						}
+					}
+				}
+
+				wnd.ProcessEvents(consumedEvents);
+			}
+
+			return returnedEvents;
 		}
 
 		private void ProcessEvent(SDL_Event e)

@@ -77,13 +77,7 @@ namespace SDLWrapper
 			}
 			set
 			{
-				SDL_Rect r = new SDL_Rect();
-
-				r.x = value.X;
-				r.y = value.Y;
-				r.w = value.Width;
-				r.h = value.Height;
-
+				SDL_Rect r = value.ToSDL();
 				SDL_RenderSetClipRect(Handle, ref r);
 			}
 		}
@@ -97,13 +91,7 @@ namespace SDLWrapper
 			}
 			set
 			{
-				SDL_Rect r = new SDL_Rect();
-
-				r.x = value.X;
-				r.y = value.Y;
-				r.w = value.Width;
-				r.h = value.Height;
-
+				SDL_Rect r = value.ToSDL();
 				SDL_RenderSetViewport(Handle, ref r);
 			}
 		}
