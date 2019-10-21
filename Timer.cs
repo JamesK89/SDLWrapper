@@ -13,6 +13,8 @@ namespace SDLWrapper
 	public class Timer : IDisposable
 	{
 		private uint _interval;
+		SDL_TimerCallback _callback;
+		GCHandle _gcHandle;
 
 		public delegate void TickEventHandler(object sender, EventArgs e);
 
@@ -21,11 +23,13 @@ namespace SDLWrapper
 		public Timer(uint interval)
 		{
 			_interval = interval;
+			_callback = new SDL_TimerCallback(TickCallback);
+			_gcHandle = GCHandle.Alloc(_callback);
 
 			if (_interval > 0)
 			{
 				Handle = new IntPtr(
-					SDL_AddTimer(interval, null, IntPtr.Zero));
+					SDL_AddTimer(interval, _callback, IntPtr.Zero));
 
 				if (Handle == IntPtr.Zero)
 				{
@@ -72,7 +76,7 @@ namespace SDLWrapper
 					if (value > 0)
 					{
 						Handle = new IntPtr(
-							SDL_AddTimer(value, TickCallback, IntPtr.Zero));
+							SDL_AddTimer(value, _callback, IntPtr.Zero));
 
 						if (Handle == IntPtr.Zero)
 						{
@@ -109,6 +113,12 @@ namespace SDLWrapper
 				{
 					SDL_RemoveTimer(Handle.ToInt32());
 					Handle = IntPtr.Zero;
+				}
+				
+				if (_callback != null)
+				{
+					_gcHandle.Free();
+					_callback = null;
 				}
 
 				disposedValue = true;
