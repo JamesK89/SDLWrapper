@@ -25,8 +25,7 @@ namespace SDLWrapper
 		/// </summary>
 		Exclusive
 	}
-
-#if HIT_TEST_ENABLED
+	
 	public enum WindowHitTestResult
 	{
 		Normal = 0,
@@ -40,7 +39,6 @@ namespace SDLWrapper
 		ResizeBottomLeft,
 		ResizeLeft
 	}
-#endif
 
 	[Flags]
 	public enum MouseButton

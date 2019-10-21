@@ -86,6 +86,7 @@
     <Compile Include="Initializers.cs" />
     <Compile Include="Palette.cs" />
     <Compile Include="SDLException.cs" />
+    <Compile Include="Time.cs" />
     <Compile Include="Timer.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="Events.cs" />

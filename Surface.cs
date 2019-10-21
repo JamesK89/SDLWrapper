@@ -19,11 +19,13 @@ namespace SDLWrapper
 
 		private Palette _palette;
 
-		internal Surface(IntPtr handle)
+		internal Surface(IntPtr handle, bool owner)
 		{
 			Initializers.InitializeVideo();
 
 			Handle = handle;
+			
+			IsOwner = owner;
 
 			Initialize();
 		}
@@ -40,6 +42,8 @@ namespace SDLWrapper
 			{
 				throw new SDLException();
 			}
+
+			IsOwner = true;
 
 			Initialize();
 		}
@@ -64,6 +68,8 @@ namespace SDLWrapper
 			{
 				throw new SDLException();
 			}
+			
+			IsOwner = true;
 
 			Initialize();
 		}
@@ -76,6 +82,8 @@ namespace SDLWrapper
 			{
 				throw new SDLException();
 			}
+
+			IsOwner = true;
 
 			Initialize();
 		}
@@ -110,6 +118,12 @@ namespace SDLWrapper
 				_palette = new Palette(_format.palette, false);
 			}
 #endif
+		}
+
+		private bool IsOwner
+		{
+			get;
+			set;
 		}
 
 		public IntPtr Handle
@@ -616,7 +630,7 @@ namespace SDLWrapper
 
 		public Surface Clone()
 		{
-			Surface result = new Surface(Clone(Handle));
+			Surface result = new Surface(Clone(Handle), true);
 
 			return result;
 		}
@@ -633,7 +647,7 @@ namespace SDLWrapper
 		{
 			if (!disposedValue)
 			{
-				if (Handle != IntPtr.Zero)
+				if (Handle != IntPtr.Zero && IsOwner)
 				{
 					SDL_FreeSurface(Handle);
 					Handle = IntPtr.Zero;

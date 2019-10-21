@@ -622,5 +622,49 @@ namespace SDLWrapper
 
 			return result;
 		}
+
+		public static SDL_HitTestResult ToSDL(this WindowHitTestResult value)
+		{
+			SDL_HitTestResult result = SDL_HitTestResult.SDL_HITTEST_NORMAL;
+
+			switch (value)
+			{
+				case WindowHitTestResult.Drag:
+					result = SDL_HitTestResult.SDL_HITTEST_DRAGGABLE;
+					break;
+				case WindowHitTestResult.ResizeTopLeft:
+					result = SDL_HitTestResult.SDL_HITTEST_RESIZE_TOPLEFT;
+					break;
+				case WindowHitTestResult.ResizeTop:
+					result = SDL_HitTestResult.SDL_HITTEST_RESIZE_TOP;
+					break;
+				case WindowHitTestResult.ResizeTopRight:
+					result = SDL_HitTestResult.SDL_HITTEST_RESIZE_TOPRIGHT;
+					break;
+				case WindowHitTestResult.ResizeRight:
+					result = SDL_HitTestResult.SDL_HITTEST_RESIZE_RIGHT;
+					break;
+				case WindowHitTestResult.ResizeBottomRight:
+					result = 
+						SDL_HitTestResult.SDL_HITTEST_RESIZE_BOTTOMRIGHT;
+					break;
+				case WindowHitTestResult.ResizeBottom:
+					result = SDL_HitTestResult.SDL_HITTEST_RESIZE_BOTTOM;
+					break;
+				case WindowHitTestResult.ResizeBottomLeft:
+					result = 
+						SDL_HitTestResult.SDL_HITTEST_RESIZE_BOTTOMLEFT;
+					break;
+				case WindowHitTestResult.ResizeLeft:
+					result = SDL_HitTestResult.SDL_HITTEST_RESIZE_LEFT;
+					break;
+				case WindowHitTestResult.Normal:
+				default:
+					result = SDL_HitTestResult.SDL_HITTEST_NORMAL;
+					break;
+			}
+
+			return result;
+		}
 	}
 }

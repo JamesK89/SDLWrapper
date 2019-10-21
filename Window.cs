@@ -53,6 +53,9 @@ namespace SDLWrapper
 
 		private bool _loaded;
 
+		private GCHandle _gcHitTestCallbackHandle;
+		private SDL_HitTest _hitTestCallback;
+
 		private static Dictionary<IntPtr, WeakReference<Window>> _windows
 			= new Dictionary<IntPtr, WeakReference<Window>>();
 
@@ -98,16 +101,10 @@ namespace SDLWrapper
 
 			Renderer = new Renderer(renderHandle);
 
-			IntPtr surfaceHandle = SDL_GetWindowSurface(Handle);
-
-			if (surfaceHandle == IntPtr.Zero)
-			{
-				throw new SDLException();
-			}
-
-			Surface = new Surface(surfaceHandle);
-
 			ID = SDL_GetWindowID(Handle);
+
+			_hitTestCallback = new SDL_HitTest(HitTestCallback);
+			_gcHitTestCallbackHandle = GCHandle.Alloc(_hitTestCallback);
 
 			_windows.Add(Handle, new WeakReference<Window>(this));
 		}
@@ -138,8 +135,17 @@ namespace SDLWrapper
 
 		public Surface Surface
 		{
-			get;
-			private set;
+			get
+			{
+				IntPtr surfaceHandle = SDL_GetWindowSurface(Handle);
+
+				if (surfaceHandle == IntPtr.Zero)
+				{
+					throw new SDLException();
+				}
+
+				return new Surface(surfaceHandle, false);
+			}
 		}
 
 		public Surface Icon
@@ -482,6 +488,34 @@ namespace SDLWrapper
 			}
 		}
 
+		public void Update()
+		{
+			if (SDL_UpdateWindowSurface(Handle) != 0)
+			{
+				throw new SDLException();
+			}
+		}
+
+		public void Update(Rectangle rect)
+		{
+			SDL_Rect[] r = new SDL_Rect[] { rect.ToSDL() };
+
+			if (SDL_UpdateWindowSurfaceRects(Handle, r, r.Length) != 0)
+			{
+				throw new SDLException();
+			}
+		}
+
+		public void Update(IEnumerable<Rectangle> rects)
+		{
+			SDL_Rect[] r = rects.Select(o => o.ToSDL()).ToArray();
+
+			if (SDL_UpdateWindowSurfaceRects(Handle, r, r.Length) != 0)
+			{
+				throw new SDLException();
+			}
+		}
+
 		public virtual void Focus()
 		{
 			SDL_RaiseWindow(Handle);
@@ -626,30 +660,37 @@ namespace SDLWrapper
 		{
 			Restored?.Invoke(this, new EventArgs());
 		}
-
-#if HIT_TESTS_ENABLED
-		public bool HitTestEnabled
+		
+		public bool IsHitTestEnabled
 		{
 			set
 			{
 				if (value)
 				{
-					SDL_SetWindowHitTest(Handle, NativeHitTest, IntPtr.Zero);
+					if (SDL_SetWindowHitTest(
+						 Handle,
+						 _hitTestCallback,
+						 IntPtr.Zero) != 0)
+					{
+						throw new SDLException();
+					}
 				}
 				else
 				{
-					SDL_SetWindowHitTest(Handle, null, IntPtr.Zero);
+					if (SDL_SetWindowHitTest(Handle, null, IntPtr.Zero) != 0)
+					{
+						throw new SDLException();
+					}
 				}
 			}
 		}
 
 		protected virtual WindowHitTestResult OnHitTest(Point position)
 		{
-			Debug.WriteLine(nameof(OnHitTest));
 			return WindowHitTestResult.Normal;
 		}
 
-		private SDL_HitTestResult NativeHitTest(
+		private SDL_HitTestResult HitTestCallback(
 			IntPtr win, IntPtr area, IntPtr data)
 		{
 			SDL_HitTestResult result = SDL_HitTestResult.SDL_HITTEST_NORMAL;
@@ -669,50 +710,14 @@ namespace SDLWrapper
 					}
 				}
 
-				WindowHitTestResult testResult = 
+				WindowHitTestResult testResult =
 					OnHitTest(new Point(p.x, p.y));
 
-				switch (testResult)
-				{
-					case WindowHitTestResult.Drag:
-						result = SDL_HitTestResult.SDL_HITTEST_DRAGGABLE;
-						break;
-					case WindowHitTestResult.ResizeTopLeft:
-						result = SDL_HitTestResult.SDL_HITTEST_RESIZE_TOPLEFT;
-						break;
-					case WindowHitTestResult.ResizeTop:
-						result = SDL_HitTestResult.SDL_HITTEST_RESIZE_TOP;
-						break;
-					case WindowHitTestResult.ResizeTopRight:
-						result = SDL_HitTestResult.SDL_HITTEST_RESIZE_TOPRIGHT;
-						break;
-					case WindowHitTestResult.ResizeRight:
-						result = SDL_HitTestResult.SDL_HITTEST_RESIZE_RIGHT;
-						break;
-					case WindowHitTestResult.ResizeBottomRight:
-						result = 
-							SDL_HitTestResult.SDL_HITTEST_RESIZE_BOTTOMRIGHT;
-						break;
-					case WindowHitTestResult.ResizeBottom:
-						result = SDL_HitTestResult.SDL_HITTEST_RESIZE_BOTTOM;
-						break;
-					case WindowHitTestResult.ResizeBottomLeft:
-						result = 
-							SDL_HitTestResult.SDL_HITTEST_RESIZE_BOTTOMLEFT;
-						break;
-					case WindowHitTestResult.ResizeLeft:
-						result = SDL_HitTestResult.SDL_HITTEST_RESIZE_LEFT;
-						break;
-					case WindowHitTestResult.Normal:
-					default:
-						result = SDL_HitTestResult.SDL_HITTEST_NORMAL;
-						break;
-				}
+				result = testResult.ToSDL();
 			}
 
 			return result;
 		}
-#endif
 		
 		private bool WindowHasFlag(
 			SDL_WindowFlags flag)
@@ -815,15 +820,23 @@ namespace SDLWrapper
 					}
 				}
 
+				if (numEvents < 0)
+				{
+					throw new SDLException();
+				}
+
 				if (returnedEvents.Count > 0)
 				{
 					events = returnedEvents.ToArray();
 
-					SDL_PeepEvents(
-						events, events.Length,
-						SDL_eventaction.SDL_ADDEVENT,
-						SDL_EventType.SDL_FIRSTEVENT, 
-						SDL_EventType.SDL_LASTEVENT);
+					if (SDL_PeepEvents(
+						 events, events.Length,
+						 SDL_eventaction.SDL_ADDEVENT,
+						 SDL_EventType.SDL_FIRSTEVENT,
+						 SDL_EventType.SDL_LASTEVENT) < 0)
+					{
+						throw new SDLException();
+					}
 				}
 
 				wnd.ProcessEvents(consumedEvents);
@@ -1061,6 +1074,12 @@ namespace SDLWrapper
 				{
 					Renderer.Dispose();
 					Renderer = null;
+				}
+
+				if (_hitTestCallback != null)
+				{
+					_gcHitTestCallbackHandle.Free();
+					_hitTestCallback = null;
 				}
 
 				if (Handle != IntPtr.Zero)
