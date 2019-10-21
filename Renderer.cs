@@ -46,7 +46,16 @@ namespace SDLWrapper
 			}
 		}
 		
-		public Size Size
+		public Size OutputSize
+		{
+			get
+			{
+				SDL_GetRendererOutputSize(Handle, out int w, out int h);
+				return new Size(w, h);
+			}
+		}
+
+		public Size LogicalSize
 		{
 			get
 			{
@@ -138,6 +147,44 @@ namespace SDLWrapper
 
 			IntPtr ptr = 
 				SDL_CreateTextureFromSurface(Handle, surface.Handle);
+
+			if (ptr != IntPtr.Zero)
+			{
+				result = new Texture(ptr, this);
+				_textures.Add(ptr, new WeakReference<Texture>(result));
+			}
+
+			return result;
+		}
+
+		public Texture CreateTexture(
+			Size size, 
+			PixelFormat format,
+			bool isStreaming = false,
+			bool isRenderTarget = false)
+		{
+			
+			Texture result = null;
+
+			SDL_TextureAccess access = 
+				SDL_TextureAccess.SDL_TEXTUREACCESS_STATIC;
+
+			if (isStreaming)
+			{
+				access |= SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING;
+			}
+
+			if (isRenderTarget)
+			{
+				access |= SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET;
+			}
+
+			IntPtr ptr = SDL_CreateTexture(
+				Handle,
+				format.ToSDL(),
+				(int)access,
+				size.Width,
+				size.Height);
 
 			if (ptr != IntPtr.Zero)
 			{
@@ -313,7 +360,7 @@ namespace SDLWrapper
 			Rectangle destRect,
 			double angle,
 			Point center,
-			RenderFlip flip)
+			RenderFlip flip = RenderFlip.None)
 		{
 			SDL_Rect s = sourceRect.ToSDL();
 			SDL_Rect d = destRect.ToSDL();
@@ -334,7 +381,7 @@ namespace SDLWrapper
 			Rectangle destRect,
 			double angle,
 			Point center,
-			RenderFlip flip)
+			RenderFlip flip = RenderFlip.None)
 		{
 			SDL_Rect d = destRect.ToSDL();
 			SDL_Point c = center.ToSDL();
@@ -386,7 +433,7 @@ namespace SDLWrapper
 			Texture texture,
 			double angle,
 			Point center,
-			RenderFlip flip)
+			RenderFlip flip = RenderFlip.None)
 		{
 			SDL_Point c = center.ToSDL();
 
@@ -403,7 +450,7 @@ namespace SDLWrapper
 		public void Copy(
 			Texture texture,
 			double angle,
-			RenderFlip flip)
+			RenderFlip flip = RenderFlip.None)
 		{
 			SDL_RenderCopyEx(
 				Handle,
@@ -434,7 +481,7 @@ namespace SDLWrapper
 		
 		public void Copy(
 			Texture texture,
-			RenderFlip flip)
+			RenderFlip flip = RenderFlip.None)
 		{
 			SDL_RenderCopyEx(
 				Handle,

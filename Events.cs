@@ -78,4 +78,13 @@ namespace SDLWrapper
 			set;
 		}
 	}
+
+	public class TimerEventArgs : EventArgs
+	{
+		public uint Interval
+		{
+			get;
+			set;
+		}
+	}
 }

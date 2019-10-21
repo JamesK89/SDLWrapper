@@ -247,6 +247,23 @@ namespace SDLWrapper
 			return new RectangleF(rect.x, rect.y, rect.w, rect.h);
 		}
 
+		public static Color ToDrawing(this SDL_Color color)
+		{
+			return Color.FromArgb(color.a, color.r, color.g, color.b);
+		}
+
+		public static SDL_Color ToSDL(this Color color)
+		{
+			SDL_Color result = new SDL_Color();
+
+			result.r = color.R;
+			result.g = color.G;
+			result.b = color.B;
+			result.a = color.A;
+
+			return result;
+		}
+
 		public static uint ToSDL(this Color color, IntPtr surface)
 		{
 			uint pixel = 0;
@@ -333,6 +350,274 @@ namespace SDLWrapper
 			if ((flip & RenderFlip.Vertical) == RenderFlip.Vertical)
 			{
 				result |= SDL_RendererFlip.SDL_FLIP_VERTICAL;
+			}
+
+			return result;
+		}
+
+		public static uint ToSDL(this PixelFormat format)
+		{
+			uint result = SDL_PIXELFORMAT_UNKNOWN;
+
+			switch (format)
+			{
+				default:
+				case PixelFormat.Unknown:
+					result = 0;
+					break;
+				case PixelFormat.Indexed1BppLittle:
+					result = SDL_PIXELFORMAT_INDEX1LSB;
+					break;
+				case PixelFormat.Indexed1BppBig:
+					result = SDL_PIXELFORMAT_INDEX1MSB;
+					break;
+				case PixelFormat.Indexed4BppLittle:
+					result = SDL_PIXELFORMAT_INDEX4LSB;
+					break;
+				case PixelFormat.Indexed4BppBig:
+					result = SDL_PIXELFORMAT_INDEX4MSB;
+					break;
+				case PixelFormat.Indexed8Bpp:
+					result = SDL_PIXELFORMAT_INDEX8;
+					break;
+				case PixelFormat.RGB332:
+					result = SDL_PIXELFORMAT_RGB332;
+					break;
+				case PixelFormat.RGB444:
+					result = SDL_PIXELFORMAT_RGB444;
+					break;
+				case PixelFormat.RGB555:
+					result = SDL_PIXELFORMAT_RGB555;
+					break;
+				case PixelFormat.BGR555:
+					result = SDL_PIXELFORMAT_BGR555;
+					break;
+				case PixelFormat.ARGB4444:
+					result = SDL_PIXELFORMAT_ARGB4444;
+					break;
+				case PixelFormat.RGBA4444:
+					result = SDL_PIXELFORMAT_RGBA4444;
+					break;
+				case PixelFormat.ABGR4444:
+					result = SDL_PIXELFORMAT_ABGR4444;
+					break;
+				case PixelFormat.BGRA4444:
+					result = SDL_PIXELFORMAT_BGRA4444;
+					break;
+				case PixelFormat.ARGB1555:
+					result = SDL_PIXELFORMAT_ARGB1555;
+					break;
+				case PixelFormat.RGBA5551:
+					result = SDL_PIXELFORMAT_RGBA5551;
+					break;
+				case PixelFormat.ABGR1555:
+					result = SDL_PIXELFORMAT_ABGR1555;
+					break;
+				case PixelFormat.BGRA5551:
+					result = SDL_PIXELFORMAT_BGRA5551;
+					break;
+				case PixelFormat.RGB565:
+					result = SDL_PIXELFORMAT_RGB565;
+					break;
+				case PixelFormat.BGR565:
+					result = SDL_PIXELFORMAT_BGR565;
+					break;
+				case PixelFormat.RGB24:
+					result = SDL_PIXELFORMAT_RGB24;
+					break;
+				case PixelFormat.BGR24:
+					result = SDL_PIXELFORMAT_BGR24;
+					break;
+				case PixelFormat.RGB888:
+					result = SDL_PIXELFORMAT_RGB888;
+					break;
+				case PixelFormat.RGBX8888:
+					result = SDL_PIXELFORMAT_RGBX8888;
+					break;
+				case PixelFormat.BGR888:
+					result = SDL_PIXELFORMAT_BGR888;
+					break;
+				case PixelFormat.BGRX8888:
+					result = SDL_PIXELFORMAT_BGRX8888;
+					break;
+				case PixelFormat.ARGB8888:
+					result = SDL_PIXELFORMAT_ARGB8888;
+					break;
+				case PixelFormat.RGBA8888:
+					result = SDL_PIXELFORMAT_RGBA8888;
+					break;
+				case PixelFormat.ABGR8888:
+					result = SDL_PIXELFORMAT_ABGR8888;
+					break;
+				case PixelFormat.BGRA8888:
+					result = SDL_PIXELFORMAT_BGRA8888;
+					break;
+				case PixelFormat.ARGB2101010:
+					result = SDL_PIXELFORMAT_ARGB2101010;
+					break;
+				case PixelFormat.YV12:
+					result = SDL_PIXELFORMAT_YV12;
+					break;
+				case PixelFormat.IYUV:
+					result = SDL_PIXELFORMAT_IYUV;
+					break;
+				case PixelFormat.YUY2:
+					result = SDL_PIXELFORMAT_YUY2;
+					break;
+				case PixelFormat.UYVY:
+					result = SDL_PIXELFORMAT_UYVY;
+					break;
+				case PixelFormat.YVYU:
+					result = SDL_PIXELFORMAT_YVYU;
+					break;
+			}
+
+			return result;
+		}
+
+		public static PixelFormat ToPixelFormat(this uint format)
+		{
+			PixelFormat result = PixelFormat.Unknown;
+
+			if (format == SDL_PIXELFORMAT_INDEX1LSB)
+			{
+				result = PixelFormat.Indexed1BppLittle;
+			}
+			else if (format == SDL_PIXELFORMAT_INDEX1MSB)
+			{
+				result = PixelFormat.Indexed1BppBig;
+			}
+			else if (format == SDL_PIXELFORMAT_INDEX4LSB)
+			{
+				result = PixelFormat.Indexed4BppLittle;
+			}
+			else if (format == SDL_PIXELFORMAT_INDEX4MSB)
+			{
+				result = PixelFormat.Indexed4BppBig;
+			}
+			else if (format == SDL_PIXELFORMAT_INDEX8)
+			{
+				result = PixelFormat.Indexed8Bpp;
+			}
+			else if (format == SDL_PIXELFORMAT_RGB332)
+			{
+				result = PixelFormat.RGB332;
+			}
+			else if (format == SDL_PIXELFORMAT_RGB444)
+			{
+				result = PixelFormat.RGB444;
+			}
+			else if (format == SDL_PIXELFORMAT_RGB555)
+			{
+				result = PixelFormat.RGB555;
+			}
+			else if (format == SDL_PIXELFORMAT_BGR555)
+			{
+				result = PixelFormat.BGR555;
+			}
+			else if (format == SDL_PIXELFORMAT_ARGB4444)
+			{
+				result = PixelFormat.ARGB4444;
+			}
+			else if (format == SDL_PIXELFORMAT_RGBA4444)
+			{
+				result = PixelFormat.RGBA4444;
+			}
+			else if (format == SDL_PIXELFORMAT_ABGR4444)
+			{
+				result = PixelFormat.ABGR4444;
+			}
+			else if (format == SDL_PIXELFORMAT_BGRA4444)
+			{
+				result = PixelFormat.BGRA4444;
+			}
+			else if (format == SDL_PIXELFORMAT_ARGB1555)
+			{
+				result = PixelFormat.ARGB1555;
+			}
+			else if (format == SDL_PIXELFORMAT_RGBA5551)
+			{
+				result = PixelFormat.RGBA5551;
+			}
+			else if (format == SDL_PIXELFORMAT_ABGR1555)
+			{
+				result = PixelFormat.ABGR1555;
+			}
+			else if (format == SDL_PIXELFORMAT_BGRA5551)
+			{
+				result = PixelFormat.BGRA5551;
+			}
+			else if (format == SDL_PIXELFORMAT_RGB565)
+			{
+				result = PixelFormat.RGB565;
+			}
+			else if (format == SDL_PIXELFORMAT_BGR565)
+			{
+				result = PixelFormat.BGR565;
+			}
+			else if (format == SDL_PIXELFORMAT_RGB24)
+			{
+				result = PixelFormat.RGB24;
+			}
+			else if (format == SDL_PIXELFORMAT_BGR24)
+			{
+				result = PixelFormat.BGR24;
+			}
+			else if (format == SDL_PIXELFORMAT_RGB888)
+			{
+				result = PixelFormat.RGB888;
+			}
+			else if (format == SDL_PIXELFORMAT_RGBX8888)
+			{
+				result = PixelFormat.RGBX8888;
+			}
+			else if (format == SDL_PIXELFORMAT_BGR888)
+			{
+				result = PixelFormat.BGR888;
+			}
+			else if (format == SDL_PIXELFORMAT_BGRX8888)
+			{
+				result = PixelFormat.BGRX8888;
+			}
+			else if (format == SDL_PIXELFORMAT_ARGB8888)
+			{
+				result = PixelFormat.ARGB8888;
+			}
+			else if (format == SDL_PIXELFORMAT_RGBA8888)
+			{
+				result = PixelFormat.RGBA8888;
+			}
+			else if (format == SDL_PIXELFORMAT_ABGR8888)
+			{
+				result = PixelFormat.ABGR8888;
+			}
+			else if (format == SDL_PIXELFORMAT_BGRA8888)
+			{
+				result = PixelFormat.BGRA8888;
+			}
+			else if (format == SDL_PIXELFORMAT_ARGB2101010)
+			{
+				result = PixelFormat.ARGB2101010;
+			}
+			else if (format == SDL_PIXELFORMAT_YV12)
+			{
+				result = PixelFormat.YV12;
+			}
+			else if (format == SDL_PIXELFORMAT_IYUV)
+			{
+				result = PixelFormat.IYUV;
+			}
+			else if (format == SDL_PIXELFORMAT_YUY2)
+			{
+				result = PixelFormat.YUY2;
+			}
+			else if (format == SDL_PIXELFORMAT_UYVY)
+			{
+				result = PixelFormat.UYVY;
+			}
+			else if (format == SDL_PIXELFORMAT_YVYU)
+			{
+				result = PixelFormat.YVYU;
 			}
 
 			return result;

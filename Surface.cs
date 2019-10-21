@@ -10,22 +10,103 @@ using static SDL2.SDL;
 
 namespace SDLWrapper
 {
-	public class Surface : IDisposable
+	public class Surface : IDisposable, ICloneable
 	{
 #if SAFE_AS_POSSIBLE
 		private SDL_Surface _surface;
 		private SDL_PixelFormat _format;
 #endif
 
+		private Palette _palette;
+
 		internal Surface(IntPtr handle)
 		{
 			Handle = handle;
 
-#if SAFE_AS_POSSIBLE
+			Initialize();
+		}
+
+		public Surface(Size size, int bpp, PixelFormat format)
+		{
+			Handle = SDL_CreateRGBSurfaceWithFormat(
+				0,
+				size.Width, size.Height,
+				bpp,
+				format.ToSDL());
+
+			if (Handle == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
+			Initialize();
+		}
+
+		public Surface(Size size, PixelFormat format)
+		{
+			SDL_PixelFormatEnumToMasks(
+				format.ToSDL(),
+				out int bpp,
+				out uint rmask,
+				out uint gmask,
+				out uint bmask,
+				out uint amask);
+
+			Handle = SDL_CreateRGBSurfaceWithFormat(
+				0,
+				size.Width, size.Height,
+				bpp,
+				format.ToSDL());
+
+			if (Handle == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
+			Initialize();
+		}
+
+		public Surface(string fileName)
+		{
+			Handle = SDL_LoadBMP(fileName);
+
+			if (Handle == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
+			Initialize();
+		}
+
+		private void Initialize()
+		{
+			_palette = null;
+			
+#if !SAFE_AS_POSSIBLE
+			unsafe
+			{
+				SDL_Surface* pSurface = 
+					(SDL_Surface*)Handle.ToPointer();
+				SDL_PixelFormat* pFormat = 
+					(SDL_PixelFormat*)pSurface->format;
+
+				if (pFormat->palette != IntPtr.Zero)
+				{
+					_palette = new Palette(
+						pFormat->palette,
+						false);
+				}
+			}
+#else
 			_surface = 
 				Marshal.PtrToStructure<SDL_Surface>(Handle);
 			_format = 
 				Marshal.PtrToStructure<SDL_PixelFormat>(_surface.format);
+
+			if (_format.palette != IntPtr.Zero)
+			{
+				_palette = new Palette(_format.palette, false);
+			}
 #endif
 		}
 
@@ -35,16 +116,35 @@ namespace SDLWrapper
 			private set;
 		}
 
+		public Palette Palette
+		{
+			get
+			{
+				return _palette;
+			}
+			set
+			{
+				SDL_SetSurfacePalette(Handle, value.Handle);
+			}
+		}
+
 		public Color ColorKey
 		{
 			get
 			{
-				SDL_GetColorKey(Handle, out uint pixel);
+				if (SDL_GetColorKey(Handle, out uint pixel) != 0)
+				{
+					throw new SDLException();
+				}
+
 				return pixel.ToColorFromSDL(Handle);
 			}
 			set
 			{
-				SDL_SetColorKey(Handle, 1, value.ToSDL(Handle));
+				if (SDL_SetColorKey(Handle, 1, value.ToSDL(Handle)) != 0)
+				{
+					throw new SDLException();
+				}
 			}
 		}
 
@@ -112,9 +212,58 @@ namespace SDLWrapper
 			}
 		}
 
+		public IntPtr Pixels
+		{
+			get
+			{
+#if !SAFE_AS_POSSIBLE
+				unsafe
+				{
+					return ((SDL_Surface*)Handle.ToPointer())->pixels;
+				}
+#else
+				return _surface.pixels;
+#endif
+			}
+		}
+
+		public byte[] Data
+		{
+			get
+			{
+				GetPixels(out byte[] result);
+				return result;
+			}
+			set
+			{
+				SetPixels(value);
+			}
+		}
+
+		public PixelFormat Format
+		{
+			get
+			{
+#if !SAFE_AS_POSSIBLE
+				unsafe
+				{
+					SDL_Surface* pSurface =
+						(SDL_Surface*)Handle.ToPointer();
+
+					SDL_PixelFormat* pFormat =
+						(SDL_PixelFormat*)pSurface->format.ToPointer();
+
+					return pFormat->format.ToPixelFormat();
+				}
+#else
+				return _format.format.ToPixelFormat();
+#endif
+			}
+		}
+
 		public static Surface FromBitmap(string fileName)
 		{
-			return new Surface(SDL_LoadBMP(fileName));
+			return new Surface(fileName);
 		}
 
 		public void GetPixels(out byte[] pixels)
@@ -247,16 +396,22 @@ namespace SDLWrapper
 		public void FillRectangle(Rectangle rect, Color color)
 		{
 			SDL_Rect r = rect.ToSDL();
-			SDL_FillRect(Handle, ref r, color.ToSDL(Handle));
+			if (SDL_FillRect(Handle, ref r, color.ToSDL(Handle)) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void FillRectangles(IEnumerable<Rectangle> rects, Color color)
 		{
 			SDL_Rect[] nativeRects = rects.Select(o => o.ToSDL()).ToArray();
-			SDL_FillRects(
-				Handle,
-				nativeRects, nativeRects.Length,
-				color.ToSDL(Handle));
+			if (SDL_FillRects(
+				 Handle,
+				 nativeRects, nativeRects.Length,
+				 color.ToSDL(Handle)) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Blit(
@@ -359,6 +514,70 @@ namespace SDLWrapper
 				IntPtr.Zero,
 				destination.Handle,
 				IntPtr.Zero);
+		}
+
+		private static IntPtr Clone(IntPtr handle)
+		{
+			IntPtr result = IntPtr.Zero;
+
+			IntPtr pixels = IntPtr.Zero;
+
+			uint format = 0;
+			int width = 0;
+			int height = 0;
+			int depth = 0;
+			int pitch = 0;
+
+#if !SAFE_AS_POSSIBLE
+			unsafe
+			{
+				SDL_Surface* pSurface = 
+					(SDL_Surface*)handle.ToPointer();
+				SDL_PixelFormat* pFormat = 
+					(SDL_PixelFormat*)pSurface->format.ToPointer();
+
+				format = pFormat->format;
+				depth = pFormat->BitsPerPixel;
+				width = pSurface->w;
+				height = pSurface->h;
+				pixels = pSurface->pixels;
+				pitch = pSurface->pitch;
+			}
+#else
+			SDL_Surface surface =
+				Marshal.PtrToStructure<SDL_Surface>(handle);
+			SDL_PixelFormat pixelFormat =
+				Marshal.PtrToStructure<SDL_PixelFormat>(surface.format);
+			
+			format = pixelFormat.format;
+			pixels = surface.pixels;
+			depth = pixelFormat.BitsPerPixel;
+			pitch = surface.pitch;
+			width = surface.w;
+			height = surface.h;
+#endif
+
+			result = SDL_CreateRGBSurfaceWithFormatFrom(
+				pixels,
+				width,
+				height,
+				depth,
+				pitch,
+				format);
+
+			return result;
+		}
+
+		public Surface Clone()
+		{
+			Surface result = new Surface(Clone(Handle));
+
+			return result;
+		}
+
+		object ICloneable.Clone()
+		{
+			return Clone();
 		}
 
 #region IDisposable Support
