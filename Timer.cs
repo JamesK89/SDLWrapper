@@ -16,7 +16,7 @@ namespace SDLWrapper
 		SDL_TimerCallback _callback;
 		GCHandle _gcHandle;
 
-		public delegate void TickEventHandler(object sender, EventArgs e);
+		public delegate void TickEventHandler(object sender, TimerEventArgs e);
 
 		public event TickEventHandler Tick;
 
