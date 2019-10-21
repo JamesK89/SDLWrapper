@@ -18,6 +18,8 @@ namespace SDLWrapper
 
 		internal Renderer(IntPtr handle)
 		{
+			Initializers.InitializeVideo();
+
 			Handle = handle;
 
 			_textures = new Dictionary<IntPtr, WeakReference<Texture>>();

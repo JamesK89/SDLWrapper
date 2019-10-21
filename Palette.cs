@@ -19,6 +19,8 @@ namespace SDLWrapper
 
 		internal Palette(IntPtr handle, bool owner)
 		{
+			Initializers.InitializeVideo();
+
 			Handle = handle;
 			IsOwner = owner;
 

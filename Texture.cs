@@ -71,6 +71,8 @@ namespace SDLWrapper
 
 		internal Texture(IntPtr handle, Renderer renderer)
 		{
+			Initializers.InitializeVideo();
+
 			Handle = handle;
 
 			if (SDL_QueryTexture(

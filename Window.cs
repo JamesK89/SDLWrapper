@@ -58,6 +58,9 @@ namespace SDLWrapper
 
 		public Window()
 		{
+			Initializers.InitializeEvents();
+			Initializers.InitializeVideo();
+
 			_loaded = false;
 
 			Handle = SDL_CreateWindow(
@@ -730,6 +733,18 @@ namespace SDLWrapper
 
 			return result;
 		}
+
+		public bool DoEvent(SDL_Event e)
+		{
+			bool result = IsEventForMe(e);
+
+			if (result)
+			{
+				ProcessEvent(e);
+			}
+
+			return result;
+		}
 		
 		public static void DoEvents()
 		{
@@ -889,18 +904,22 @@ namespace SDLWrapper
 			switch (e.type)
 			{
 				case SDL_EventType.SDL_TEXTINPUT:
+#if !SAFE_AS_POSSIBLE
 					unsafe
 					{
 						args.Text = new string((sbyte*)e.text.text);
 					}
+#endif
 
 					OnTextInput(args);
 					break;
 				case SDL_EventType.SDL_TEXTEDITING:
+#if !SAFE_AS_POSSIBLE
 					unsafe
 					{
 						args.Text = new string((sbyte*)e.edit.text);
 					}
+#endif
 
 					OnTextEdit(args);
 					break;

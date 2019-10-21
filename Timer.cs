@@ -22,6 +22,8 @@ namespace SDLWrapper
 
 		public Timer(uint interval)
 		{
+			Initializers.InitializeTimer();
+
 			_interval = interval;
 			_callback = new SDL_TimerCallback(TickCallback);
 			_gcHandle = GCHandle.Alloc(_callback);

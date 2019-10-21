@@ -21,6 +21,8 @@ namespace SDLWrapper
 
 		internal Surface(IntPtr handle)
 		{
+			Initializers.InitializeVideo();
+
 			Handle = handle;
 
 			Initialize();
