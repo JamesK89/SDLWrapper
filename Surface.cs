@@ -126,7 +126,10 @@ namespace SDLWrapper
 			}
 			set
 			{
-				SDL_SetSurfacePalette(Handle, value.Handle);
+				if (SDL_SetSurfacePalette(Handle, value.Handle) != 0)
+				{
+					throw new SDLException();
+				}
 			}
 		}
 
@@ -159,7 +162,11 @@ namespace SDLWrapper
 			set
 			{
 				SDL_GetColorKey(Handle, out uint key);
-				SDL_SetColorKey(Handle, value ? 1 : 0, key);
+
+				if (SDL_SetColorKey(Handle, value ? 1 : 0, key) != 0)
+				{
+					throw new SDLException();
+				}
 			}
 		}
 
@@ -382,7 +389,10 @@ namespace SDLWrapper
 
 		public void Lock()
 		{
-			SDL_LockSurface(Handle);
+			if (SDL_LockSurface(Handle) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Unlock()
@@ -392,12 +402,16 @@ namespace SDLWrapper
 
 		public void SaveBitmap(string fileName)
 		{
-			SDL_SaveBMP(Handle, fileName);
+			if (SDL_SaveBMP(Handle, fileName) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void FillRectangle(Rectangle rect, Color color)
 		{
 			SDL_Rect r = rect.ToSDL();
+
 			if (SDL_FillRect(Handle, ref r, color.ToSDL(Handle)) != 0)
 			{
 				throw new SDLException();
@@ -407,6 +421,7 @@ namespace SDLWrapper
 		public void FillRectangles(IEnumerable<Rectangle> rects, Color color)
 		{
 			SDL_Rect[] nativeRects = rects.Select(o => o.ToSDL()).ToArray();
+
 			if (SDL_FillRects(
 				 Handle,
 				 nativeRects, nativeRects.Length,
@@ -424,11 +439,14 @@ namespace SDLWrapper
 			SDL_Rect s = sourceRect.ToSDL();
 			SDL_Rect d = destinationRect.ToSDL();
 
-			SDL_BlitSurface(
-				Handle,
-				ref s,
-				destination.Handle,
-				ref d);
+			if (SDL_BlitSurface(
+				 Handle,
+				 ref s,
+				 destination.Handle,
+				 ref d) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 		
 		public void Blit(
@@ -436,12 +454,15 @@ namespace SDLWrapper
 			Rectangle destinationRect)
 		{
 			SDL_Rect d = destinationRect.ToSDL();
-			
-			SDL_BlitSurface(
-				Handle,
-				IntPtr.Zero,
-				destination.Handle,
-				ref d);
+
+			if (SDL_BlitSurface(
+				 Handle,
+				 IntPtr.Zero,
+				 destination.Handle,
+				 ref d) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Blit(
@@ -450,21 +471,27 @@ namespace SDLWrapper
 		{
 			SDL_Rect s = sourceRect.ToSDL();
 
-			SDL_BlitSurface(
-				Handle,
-				ref s,
-				destination.Handle,
-				IntPtr.Zero);
+			if (SDL_BlitSurface(
+				 Handle,
+				 ref s,
+				 destination.Handle,
+				 IntPtr.Zero) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 		
 		public void Blit(
 			Surface destination)
 		{
-			SDL_BlitSurface(
-				Handle,
-				IntPtr.Zero,
-				destination.Handle,
-				IntPtr.Zero);
+			if (SDL_BlitSurface(
+				 Handle,
+				 IntPtr.Zero,
+				 destination.Handle,
+				 IntPtr.Zero) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 		
 		public void BlitScaled(
@@ -475,11 +502,14 @@ namespace SDLWrapper
 			SDL_Rect s = sourceRect.ToSDL();
 			SDL_Rect d = destinationRect.ToSDL();
 
-			SDL_BlitScaled(
-				Handle,
-				ref s,
-				destination.Handle,
-				ref d);
+			if (SDL_BlitScaled(
+				 Handle,
+				 ref s,
+				 destination.Handle,
+				 ref d) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void BlitScaled (
@@ -487,12 +517,15 @@ namespace SDLWrapper
 			Rectangle destinationRect)
 		{
 			SDL_Rect d = destinationRect.ToSDL();
-			
-			SDL_BlitScaled(
-				Handle,
-				IntPtr.Zero,
-				destination.Handle,
-				ref d);
+
+			if (SDL_BlitScaled(
+				 Handle,
+				 IntPtr.Zero,
+				 destination.Handle,
+				 ref d) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void BlitScaled(
@@ -501,21 +534,27 @@ namespace SDLWrapper
 		{
 			SDL_Rect s = sourceRect.ToSDL();
 
-			SDL_BlitScaled(
-				Handle,
-				ref s,
-				destination.Handle,
-				IntPtr.Zero);
+			if (SDL_BlitScaled(
+				 Handle,
+				 ref s,
+				 destination.Handle,
+				 IntPtr.Zero) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 		
 		public void BlitScaled(
 			Surface destination)
 		{
-			SDL_BlitScaled(
-				Handle,
-				IntPtr.Zero,
-				destination.Handle,
-				IntPtr.Zero);
+			if (SDL_BlitScaled(
+				 Handle,
+				 IntPtr.Zero,
+				 destination.Handle,
+				 IntPtr.Zero) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		private static IntPtr Clone(IntPtr handle)
@@ -566,6 +605,11 @@ namespace SDLWrapper
 				depth,
 				pitch,
 				format);
+
+			if (result == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
 
 			return result;
 		}

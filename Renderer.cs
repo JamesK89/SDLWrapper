@@ -199,7 +199,10 @@ namespace SDLWrapper
 
 		public void Clear()
 		{
-			SDL_RenderClear(Handle);
+			if (SDL_RenderClear(Handle) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Present()
@@ -209,7 +212,10 @@ namespace SDLWrapper
 
 		public void Point(Point p)
 		{
-			SDL_RenderDrawPoint(Handle, p.X, p.Y);
+			if (SDL_RenderDrawPoint(Handle, p.X, p.Y) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Point(IEnumerable<Point> points)
@@ -217,13 +223,19 @@ namespace SDLWrapper
 			SDL_Point[] nativePoints = 
 				points.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderDrawPoints(Handle,
-				nativePoints, nativePoints.Length);
+			if (SDL_RenderDrawPoints(Handle,
+				 nativePoints, nativePoints.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Point(PointF p)
 		{
-			SDL_RenderDrawPointF(Handle, p.X, p.Y);
+			if (SDL_RenderDrawPointF(Handle, p.X, p.Y) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 		
 		public void Point(IEnumerable<PointF> points)
@@ -231,16 +243,22 @@ namespace SDLWrapper
 			SDL_FPoint[] nativePoints = 
 				points.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderDrawPointsF(Handle,
-				nativePoints, nativePoints.Length);
+			if (SDL_RenderDrawPointsF(Handle,
+				 nativePoints, nativePoints.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Line(Point a, Point b)
 		{
-			SDL_RenderDrawLine(
-				Handle,
-				a.X, a.Y,
-				b.X, b.Y);
+			if (SDL_RenderDrawLine(
+				 Handle,
+				 a.X, a.Y,
+				 b.X, b.Y) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Line(IEnumerable<Point> points)
@@ -248,16 +266,22 @@ namespace SDLWrapper
 			SDL_Point[] nativePoints = 
 				points.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderDrawLines(Handle,
-				nativePoints, nativePoints.Length);
+			if (SDL_RenderDrawLines(Handle,
+				 nativePoints, nativePoints.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Line(PointF a, PointF b)
 		{
-			SDL_RenderDrawLineF(
-				Handle,
-				a.X, a.Y,
-				b.X, b.Y);
+			if (SDL_RenderDrawLineF(
+				 Handle,
+				 a.X, a.Y,
+				 b.X, b.Y) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 		
 		public void Line(IEnumerable<PointF> points)
@@ -265,14 +289,21 @@ namespace SDLWrapper
 			SDL_FPoint[] nativePoints = 
 				points.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderDrawLinesF(Handle,
-				nativePoints, nativePoints.Length);
+			if (SDL_RenderDrawLinesF(Handle,
+				 nativePoints, nativePoints.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Rectangle(Rectangle rect)
 		{
 			SDL_Rect r = rect.ToSDL();
-			SDL_RenderDrawRect(Handle, ref r);
+
+			if (SDL_RenderDrawRect(Handle, ref r) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Rectangle(IEnumerable<Rectangle> rects)
@@ -280,14 +311,21 @@ namespace SDLWrapper
 			SDL_Rect[] nativeRects =
 				rects.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderDrawRects(Handle,
-				nativeRects, nativeRects.Length);
+			if (SDL_RenderDrawRects(Handle,
+				 nativeRects, nativeRects.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Rectangle(RectangleF rect)
 		{
 			SDL_FRect r = rect.ToSDL();
-			SDL_RenderDrawRectF(Handle, ref r);
+
+			if (SDL_RenderDrawRectF(Handle, ref r) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Rectangle(IEnumerable<RectangleF> rects)
@@ -295,14 +333,21 @@ namespace SDLWrapper
 			SDL_FRect[] nativeRects =
 				rects.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderDrawRectsF(Handle,
-				nativeRects, nativeRects.Length);
+			if (SDL_RenderDrawRectsF(Handle,
+				 nativeRects, nativeRects.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void FillRectangle(Rectangle rect)
 		{
 			SDL_Rect r = rect.ToSDL();
-			SDL_RenderFillRect(Handle, ref r);
+
+			if (SDL_RenderFillRect(Handle, ref r) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void FillRectangle(IEnumerable<Rectangle> rects)
@@ -310,14 +355,21 @@ namespace SDLWrapper
 			SDL_Rect[] nativeRects =
 				rects.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderFillRects(Handle,
-				nativeRects, nativeRects.Length);
+			if (SDL_RenderFillRects(Handle,
+				 nativeRects, nativeRects.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void FillRectangle(RectangleF rect)
 		{
 			SDL_FRect r = rect.ToSDL();
-			SDL_RenderFillRectF(Handle, ref r);
+
+			if (SDL_RenderFillRectF(Handle, ref r) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void FillRectangle(IEnumerable<RectangleF> rects)
@@ -325,25 +377,51 @@ namespace SDLWrapper
 			SDL_FRect[] nativeRects =
 				rects.Select(o => o.ToSDL()).ToArray();
 
-			SDL_RenderFillRectsF(Handle,
-				nativeRects, nativeRects.Length);
+			if (SDL_RenderFillRectsF(Handle,
+				 nativeRects, nativeRects.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(Texture texture)
 		{
-			SDL_RenderCopy(Handle, texture.Handle, IntPtr.Zero, IntPtr.Zero);
+			if (SDL_RenderCopy(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 IntPtr.Zero) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(Texture texture, Rectangle destRect)
 		{
 			SDL_Rect r = destRect.ToSDL();
-			SDL_RenderCopy(Handle, texture.Handle, IntPtr.Zero, ref r);
+
+			if (SDL_RenderCopy(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 ref r) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(Rectangle sourceRect, Texture texture)
 		{
 			SDL_Rect s = sourceRect.ToSDL();
-			SDL_RenderCopy(Handle, texture.Handle, ref s, IntPtr.Zero);
+
+			if (SDL_RenderCopy(
+				 Handle,
+				 texture.Handle,
+				 ref s,
+				 IntPtr.Zero) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
@@ -353,7 +431,15 @@ namespace SDLWrapper
 		{
 			SDL_Rect s = sourceRect.ToSDL();
 			SDL_Rect r = destRect.ToSDL();
-			SDL_RenderCopy(Handle, texture.Handle, ref s, ref r);
+
+			if (SDL_RenderCopy(
+				 Handle,
+				 texture.Handle,
+				 ref s,
+				 ref r) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
@@ -368,14 +454,17 @@ namespace SDLWrapper
 			SDL_Rect d = destRect.ToSDL();
 			SDL_Point c = center.ToSDL();
 
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				ref s,
-				ref d,
-				angle,
-				ref c,
-				flip.ToSDL());
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 ref s,
+				 ref d,
+				 angle,
+				 ref c,
+				 flip.ToSDL()) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
@@ -388,14 +477,17 @@ namespace SDLWrapper
 			SDL_Rect d = destRect.ToSDL();
 			SDL_Point c = center.ToSDL();
 
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				IntPtr.Zero,
-				ref d,
-				angle,
-				ref c,
-				flip.ToSDL());
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 ref d,
+				 angle,
+				 ref c,
+				 flip.ToSDL()) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
@@ -407,28 +499,34 @@ namespace SDLWrapper
 			SDL_Rect s = sourceRect.ToSDL();
 			SDL_Rect d = destRect.ToSDL();
 
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				ref s,
-				ref d,
-				angle,
-				IntPtr.Zero,
-				SDL_RendererFlip.SDL_FLIP_NONE);
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 ref s,
+				 ref d,
+				 angle,
+				 IntPtr.Zero,
+				 SDL_RendererFlip.SDL_FLIP_NONE) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
 			Texture texture,
 			double angle)
 		{
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				IntPtr.Zero,
-				IntPtr.Zero,
-				angle,
-				IntPtr.Zero,
-				SDL_RendererFlip.SDL_FLIP_NONE);
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 IntPtr.Zero,
+				 angle,
+				 IntPtr.Zero,
+				 SDL_RendererFlip.SDL_FLIP_NONE) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
@@ -439,14 +537,17 @@ namespace SDLWrapper
 		{
 			SDL_Point c = center.ToSDL();
 
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				IntPtr.Zero,
-				IntPtr.Zero,
-				angle,
-				ref c,
-				flip.ToSDL());
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 IntPtr.Zero,
+				 angle,
+				 ref c,
+				 flip.ToSDL()) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
@@ -454,14 +555,17 @@ namespace SDLWrapper
 			double angle,
 			RenderFlip flip = RenderFlip.None)
 		{
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				IntPtr.Zero,
-				IntPtr.Zero,
-				angle,
-				IntPtr.Zero,
-				flip.ToSDL());
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 IntPtr.Zero,
+				 angle,
+				 IntPtr.Zero,
+				 flip.ToSDL()) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		public void Copy(
@@ -471,28 +575,34 @@ namespace SDLWrapper
 		{
 			SDL_Rect d = destRect.ToSDL();
 
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				IntPtr.Zero,
-				ref d,
-				angle,
-				IntPtr.Zero,
-				SDL_RendererFlip.SDL_FLIP_NONE);
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 ref d,
+				 angle,
+				 IntPtr.Zero,
+				 SDL_RendererFlip.SDL_FLIP_NONE) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 		
 		public void Copy(
 			Texture texture,
 			RenderFlip flip = RenderFlip.None)
 		{
-			SDL_RenderCopyEx(
-				Handle,
-				texture.Handle,
-				IntPtr.Zero,
-				IntPtr.Zero,
-				0,
-				IntPtr.Zero,
-				flip.ToSDL());
+			if (SDL_RenderCopyEx(
+				 Handle,
+				 texture.Handle,
+				 IntPtr.Zero,
+				 IntPtr.Zero,
+				 0,
+				 IntPtr.Zero,
+				 flip.ToSDL()) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 		internal static Texture FindTexture(IntPtr handle)

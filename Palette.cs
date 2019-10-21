@@ -77,10 +77,13 @@ namespace SDLWrapper
 			}
 			set
 			{
-				SDL_SetPaletteColors(
-					Handle,
-					new SDL_Color[] { value.ToSDL() },
-					index, 1);
+				if (SDL_SetPaletteColors(
+					 Handle,
+					 new SDL_Color[] { value.ToSDL() },
+					 index, 1) != 0)
+				{
+					throw new SDLException();
+				}
 			}
 		}
 
@@ -120,7 +123,10 @@ namespace SDLWrapper
 		private void SetColors(IEnumerable<SDL_Color> colors)
 		{
 			SDL_Color[] cols = colors.ToArray();
-			SDL_SetPaletteColors(Handle, cols, 0, cols.Length);
+			if (SDL_SetPaletteColors(Handle, cols, 0, cols.Length) != 0)
+			{
+				throw new SDLException();
+			}
 		}
 
 #region IDisposable Support

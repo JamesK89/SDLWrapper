@@ -71,21 +71,41 @@ namespace SDLWrapper
 				0,
 				SDL_WindowFlags.SDL_WINDOW_HIDDEN);
 
+			if (Handle == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
 			SDL_SysWMinfo info = new SDL_SysWMinfo();
 			SDL_VERSION(out info.version);
 			SDL_GetWindowWMInfo(Handle, ref info);
 
 			NativeHandle = info.info.win.window;
 
-			Renderer = new Renderer(
+			IntPtr renderHandle = 
 				SDL_CreateRenderer(
 					Handle,
 					0,
 					SDL_RendererFlags.SDL_RENDERER_ACCELERATED |
 					SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC |
-					SDL_RendererFlags.SDL_RENDERER_TARGETTEXTURE));
+					SDL_RendererFlags.SDL_RENDERER_TARGETTEXTURE);
 
-			Surface = new Surface(SDL_GetWindowSurface(Handle));
+
+			if (renderHandle == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
+			Renderer = new Renderer(renderHandle);
+
+			IntPtr surfaceHandle = SDL_GetWindowSurface(Handle);
+
+			if (surfaceHandle == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
+			Surface = new Surface(surfaceHandle);
 
 			ID = SDL_GetWindowID(Handle);
 
