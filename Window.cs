@@ -143,7 +143,7 @@ namespace SDLWrapper
 				{
 					throw new SDLException();
 				}
-
+				
 				return new Surface(surfaceHandle, false);
 			}
 		}
