@@ -40,19 +40,6 @@ namespace SDLWrapper
 			}
 		}
 
-		public static uint Ticks
-		{
-			get
-			{
-				return SDL_GetTicks();
-			}
-		}
-
-		public static void Delay(uint milliseconds)
-		{
-			SDL_Delay(milliseconds);
-		}
-
 		public IntPtr Handle
 		{
 			get;
