@@ -15,6 +15,7 @@ namespace SDLWrapper
 		public SDLException()
 			: base(SDL_GetError())
 		{
+			SDL_ClearError();
 		}
 	}
 }
