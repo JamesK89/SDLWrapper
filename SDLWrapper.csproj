@@ -83,6 +83,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Display.cs" />
     <Compile Include="Initializers.cs" />
     <Compile Include="Palette.cs" />
     <Compile Include="Platform.cs" />
