@@ -272,6 +272,29 @@ namespace SDLWrapper
 			}
 		}
 
+		public Mode GetClosestMode(
+			Size resolution,
+			int refreshRate = 0,
+			PixelFormat format = PixelFormat.Unknown)
+		{
+			SDL_DisplayMode desired = new SDL_DisplayMode();
+
+			desired.w = resolution.Width;
+			desired.h = resolution.Height;
+			desired.refresh_rate = refreshRate;
+			desired.format = format.ToSDL();
+
+			if (SDL_GetClosestDisplayMode(
+				 Index,
+				 ref desired,
+				 out SDL_DisplayMode closest) == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
+			return new Mode(closest);
+		}
+
 		public ModeCollection Modes
 		{
 			get;
