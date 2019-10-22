@@ -99,7 +99,7 @@ namespace SDLWrapper
 			if (!IsSensorInitialized)
 			{
 				IsSensorInitialized =
-					Initialize(SDL_INIT_GAMECONTROLLER);
+					Initialize(SDL_INIT_SENSOR);
 			}
 		}
 

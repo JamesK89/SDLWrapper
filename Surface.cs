@@ -32,6 +32,8 @@ namespace SDLWrapper
 
 		public Surface(Size size, int bpp, PixelFormat format)
 		{
+			Initializers.InitializeVideo();
+
 			Handle = SDL_CreateRGBSurfaceWithFormat(
 				0,
 				size.Width, size.Height,
@@ -50,6 +52,8 @@ namespace SDLWrapper
 
 		public Surface(Size size, PixelFormat format)
 		{
+			Initializers.InitializeVideo();
+
 			SDL_PixelFormatEnumToMasks(
 				format.ToSDL(),
 				out int bpp,
@@ -76,6 +80,8 @@ namespace SDLWrapper
 
 		public Surface(string fileName)
 		{
+			Initializers.InitializeVideo();
+
 			Handle = SDL_LoadBMP(fileName);
 
 			if (Handle == IntPtr.Zero)
