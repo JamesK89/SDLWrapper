@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 
 using SDL2;
 using static SDL2.SDL;
+using static SDL2.SDL_image;
 
 namespace SDLWrapper
 {
@@ -130,6 +131,24 @@ namespace SDLWrapper
 			{
 				IsTimerInitialized =
 					Initialize(SDL_INIT_TIMER);
+			}
+		}
+
+		public static bool IsImageInitialized
+		{
+			get;
+			private set;
+		} = false;
+
+		public static void InitializeImage()
+		{
+			if (!IsImageInitialized)
+			{
+				IsImageInitialized = true;
+				IMG_Init(IMG_InitFlags.IMG_INIT_JPG |
+						 IMG_InitFlags.IMG_INIT_PNG |
+						 IMG_InitFlags.IMG_INIT_TIF |
+						 IMG_InitFlags.IMG_INIT_WEBP);
 			}
 		}
 

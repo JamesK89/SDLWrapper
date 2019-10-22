@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 
 using SDL2;
 using static SDL2.SDL;
+using static SDL2.SDL_image;
 
 namespace SDLWrapper
 {
@@ -19,6 +20,7 @@ namespace SDLWrapper
 		internal Renderer(IntPtr handle)
 		{
 			Initializers.InitializeVideo();
+			Initializers.InitializeImage();
 
 			Handle = handle;
 
@@ -147,10 +149,34 @@ namespace SDLWrapper
 		{
 			Texture result = null;
 
-			IntPtr ptr = 
+			IntPtr ptr =
 				SDL_CreateTextureFromSurface(Handle, surface.Handle);
 
-			if (ptr != IntPtr.Zero)
+			if (ptr == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+			else
+			{
+				result = new Texture(ptr, this);
+				_textures.Add(ptr, new WeakReference<Texture>(result));
+			}
+
+			return result;
+		}
+
+		public Texture LoadTexture(
+			string fileName)
+		{
+			Texture result = null;
+
+			IntPtr ptr = IMG_LoadTexture(Handle, fileName);
+
+			if (ptr == IntPtr.Zero)
+			{
+				throw new Exception();
+			}
+			else
 			{
 				result = new Texture(ptr, this);
 				_textures.Add(ptr, new WeakReference<Texture>(result));
@@ -188,7 +214,11 @@ namespace SDLWrapper
 				size.Width,
 				size.Height);
 
-			if (ptr != IntPtr.Zero)
+			if (ptr == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+			else
 			{
 				result = new Texture(ptr, this);
 				_textures.Add(ptr, new WeakReference<Texture>(result));

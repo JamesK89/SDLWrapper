@@ -626,7 +626,7 @@ namespace SDLWrapper
 		public static SDL_HitTestResult ToSDL(this WindowHitTestResult value)
 		{
 			SDL_HitTestResult result = SDL_HitTestResult.SDL_HITTEST_NORMAL;
-
+			
 			switch (value)
 			{
 				case WindowHitTestResult.Drag:

@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 
 using SDL2;
 using static SDL2.SDL;
+using static SDL2.SDL_image;
 
 namespace SDLWrapper
 {
@@ -81,8 +82,9 @@ namespace SDLWrapper
 		public Surface(string fileName)
 		{
 			Initializers.InitializeVideo();
+			Initializers.InitializeImage();
 
-			Handle = SDL_LoadBMP(fileName);
+			Handle = IMG_Load(fileName);
 
 			if (Handle == IntPtr.Zero)
 			{
