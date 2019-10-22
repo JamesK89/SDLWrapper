@@ -15,18 +15,22 @@ namespace SDLWrapper
 	{
 		public class Mode
 		{
-			private SDL_DisplayMode _mode;
-
 			internal Mode(SDL_DisplayMode mode)
 			{
-				_mode = mode;
+				SDLMode = mode;
+			}
+
+			internal SDL_DisplayMode SDLMode
+			{
+				get;
+				set;
 			}
 
 			public int RefreshRate
 			{
 				get
 				{
-					return _mode.refresh_rate;
+					return SDLMode.refresh_rate;
 				}
 			}
 
@@ -34,7 +38,7 @@ namespace SDLWrapper
 			{
 				get
 				{
-					return new Size(_mode.w, _mode.h);
+					return new Size(SDLMode.w, SDLMode.h);
 				}
 			}
 
@@ -42,7 +46,7 @@ namespace SDLWrapper
 			{
 				get
 				{
-					return _mode.format.ToPixelFormat();
+					return SDLMode.format.ToPixelFormat();
 				}
 			}
 
@@ -51,7 +55,7 @@ namespace SDLWrapper
 				get
 				{
 					if (SDL_PixelFormatEnumToMasks(
-							_mode.format,
+							SDLMode.format,
 							out int bpp,
 							out uint r,
 							out uint g,

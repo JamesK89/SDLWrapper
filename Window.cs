@@ -198,6 +198,44 @@ namespace SDLWrapper
 			}
 		}
 
+		public Display.Mode DisplayMode
+		{
+			get
+			{
+				if (SDL_GetWindowDisplayMode(
+					 Handle, out SDL_DisplayMode mode) != 0)
+				{
+					throw new SDLException();
+				}
+
+				return new Display.Mode(mode);
+			}
+			set
+			{
+				SDL_DisplayMode mode = value.SDLMode;
+
+				if (SDL_SetWindowDisplayMode(Handle, ref mode) != 0)
+				{
+					throw new SDLException();
+				}
+			}
+		}
+
+		public Display Display
+		{
+			get
+			{
+				int index = 0;
+
+				if ((index = SDL_GetWindowDisplayIndex(Handle)) < 0)
+				{
+					throw new SDLException();
+				}
+
+				return Display.Get(index);
+			}
+		}
+
 		public Size MaximumSize
 		{
 			get
