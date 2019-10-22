@@ -76,7 +76,8 @@ namespace SDLWrapper
 			}
 		}
 
-		public class ModeCollectionEnumerator : IEnumerator<Mode>, IEnumerator
+		public class ModeCollectionEnumerator 
+			: IEnumerator<Mode>
 		{
 			private Mode[] Modes
 			{
@@ -108,8 +109,7 @@ namespace SDLWrapper
 
 			public bool MoveNext()
 			{
-				Index++;
-				return (Index < Modes.Length);
+				return (++Index < Modes.Length);
 			}
 
 			public void Reset()
@@ -118,7 +118,8 @@ namespace SDLWrapper
 			}
 		}
 
-		public class ModeCollection : IEnumerable<Mode>
+		public class ModeCollection 
+			: IEnumerable<Mode>
 		{
 			private Mode[] Modes
 			{
@@ -239,7 +240,7 @@ namespace SDLWrapper
 					throw new SDLException();
 				}
 
-				return r.ToDrawing();
+				return r.ToRectangle();
 			}
 		}
 
@@ -252,7 +253,7 @@ namespace SDLWrapper
 					throw new SDLException();
 				}
 
-				return r.ToDrawing();
+				return r.ToRectangle();
 			}
 		}
 

@@ -87,6 +87,7 @@
     <Compile Include="Initializers.cs" />
     <Compile Include="Palette.cs" />
     <Compile Include="Platform.cs" />
+    <Compile Include="ReadWriteOperation.cs" />
     <Compile Include="SDLException.cs" />
     <Compile Include="Time.cs" />
     <Compile Include="Timer.cs" />

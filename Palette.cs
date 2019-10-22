@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Diagnostics;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -10,7 +11,50 @@ using static SDL2.SDL;
 
 namespace SDLWrapper
 {
-	public class Palette : IDisposable
+	public class PaletteColorEnumerator 
+		: IEnumerator<Color>
+	{
+		internal PaletteColorEnumerator(Palette palette)
+		{
+			Palette = palette;
+			Index = -1;
+		}
+
+		private int Index
+		{
+			get;
+			set;
+		}
+
+		private Palette Palette
+		{
+			get;
+			set;
+		}
+
+		public Color Current => 
+			Palette[Index];
+
+		object IEnumerator.Current => 
+			Current;
+
+		public void Dispose()
+		{
+		}
+
+		public bool MoveNext()
+		{
+			return (++Index < Palette.Count);
+		}
+
+		public void Reset()
+		{
+			Index = -1;
+		}
+	}
+
+	public class Palette 
+		: IEnumerable<Color>, IDisposable
 	{
 #if SAFE_AS_POSSIBLE
 		SDL_Palette _palette;
@@ -69,17 +113,17 @@ namespace SDLWrapper
 					SDL_Color* colors = 
 						(SDL_Color*)palette->colors.ToPointer();
 
-					return colors[index].ToDrawing();
+					return colors[index].ToColor();
 				}
 #else
-				return _colors[index].ToDrawing();
+				return _colors[index].ToColor();
 #endif
 			}
 			set
 			{
 				if (SDL_SetPaletteColors(
 					 Handle,
-					 new SDL_Color[] { value.ToSDL() },
+					 new SDL_Color[] { value.ToSDLColor() },
 					 index, 1) != 0)
 				{
 					throw new SDLException();
@@ -129,6 +173,16 @@ namespace SDLWrapper
 			}
 		}
 
+		public static implicit operator IntPtr(Palette palette)
+		{
+			return palette.Handle;
+		}
+
+		public static implicit operator bool(Palette palette)
+		{
+			return (palette != null && palette.Handle != IntPtr.Zero);
+		}
+
 #region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
 
@@ -160,6 +214,16 @@ namespace SDLWrapper
 			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
-#endregion
+
+		public IEnumerator<Color> GetEnumerator()
+		{
+			return new PaletteColorEnumerator(this);
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return (IEnumerator)GetEnumerator();
+		}
+		#endregion
 	}
 }

@@ -164,11 +164,11 @@ namespace SDLWrapper
 					throw new SDLException();
 				}
 
-				return pixel.ToColorFromSDL(Handle);
+				return pixel.ToColorFromSDLPixel(Handle);
 			}
 			set
 			{
-				if (SDL_SetColorKey(Handle, 1, value.ToSDL(Handle)) != 0)
+				if (SDL_SetColorKey(Handle, 1, value.ToSDLPixel(Handle)) != 0)
 				{
 					throw new SDLException();
 				}
@@ -197,11 +197,11 @@ namespace SDLWrapper
 			get
 			{
 				SDL_GetClipRect(Handle, out SDL_Rect r);
-				return r.ToDrawing();
+				return r.ToRectangle();
 			}
 			set
 			{
-				SDL_Rect r = value.ToSDL();
+				SDL_Rect r = value.ToSDLRect();
 				SDL_SetClipRect(Handle, ref r);
 			}
 		}
@@ -432,9 +432,9 @@ namespace SDLWrapper
 
 		public void FillRectangle(Rectangle rect, Color color)
 		{
-			SDL_Rect r = rect.ToSDL();
+			SDL_Rect r = rect.ToSDLRect();
 
-			if (SDL_FillRect(Handle, ref r, color.ToSDL(Handle)) != 0)
+			if (SDL_FillRect(Handle, ref r, color.ToSDLPixel(Handle)) != 0)
 			{
 				throw new SDLException();
 			}
@@ -442,12 +442,12 @@ namespace SDLWrapper
 
 		public void FillRectangles(IEnumerable<Rectangle> rects, Color color)
 		{
-			SDL_Rect[] nativeRects = rects.Select(o => o.ToSDL()).ToArray();
+			SDL_Rect[] nativeRects = rects.Select(o => o.ToSDLRect()).ToArray();
 
 			if (SDL_FillRects(
 				 Handle,
 				 nativeRects, nativeRects.Length,
-				 color.ToSDL(Handle)) != 0)
+				 color.ToSDLPixel(Handle)) != 0)
 			{
 				throw new SDLException();
 			}
@@ -458,8 +458,8 @@ namespace SDLWrapper
 			Surface destination,
 			Rectangle destinationRect)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
-			SDL_Rect d = destinationRect.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
+			SDL_Rect d = destinationRect.ToSDLRect();
 
 			if (SDL_BlitSurface(
 				 Handle,
@@ -475,7 +475,7 @@ namespace SDLWrapper
 			Surface destination,
 			Rectangle destinationRect)
 		{
-			SDL_Rect d = destinationRect.ToSDL();
+			SDL_Rect d = destinationRect.ToSDLRect();
 
 			if (SDL_BlitSurface(
 				 Handle,
@@ -491,7 +491,7 @@ namespace SDLWrapper
 			Rectangle sourceRect,
 			Surface destination)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
 
 			if (SDL_BlitSurface(
 				 Handle,
@@ -521,8 +521,8 @@ namespace SDLWrapper
 			Surface destination,
 			Rectangle destinationRect)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
-			SDL_Rect d = destinationRect.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
+			SDL_Rect d = destinationRect.ToSDLRect();
 
 			if (SDL_BlitScaled(
 				 Handle,
@@ -538,7 +538,7 @@ namespace SDLWrapper
 			Surface destination,
 			Rectangle destinationRect)
 		{
-			SDL_Rect d = destinationRect.ToSDL();
+			SDL_Rect d = destinationRect.ToSDLRect();
 
 			if (SDL_BlitScaled(
 				 Handle,
@@ -554,7 +554,7 @@ namespace SDLWrapper
 			Rectangle sourceRect,
 			Surface destination)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
 
 			if (SDL_BlitScaled(
 				 Handle,
@@ -646,6 +646,16 @@ namespace SDLWrapper
 		object ICloneable.Clone()
 		{
 			return Clone();
+		}
+
+		public static implicit operator IntPtr(Surface surface)
+		{
+			return surface.Handle;
+		}
+
+		public static implicit operator bool(Surface surface)
+		{
+			return (surface != null && surface.Handle != IntPtr.Zero);
 		}
 
 #region IDisposable Support

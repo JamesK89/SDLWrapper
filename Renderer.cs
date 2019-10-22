@@ -102,7 +102,7 @@ namespace SDLWrapper
 			}
 			set
 			{
-				SDL_Rect r = value.ToSDL();
+				SDL_Rect r = value.ToSDLRect();
 				SDL_RenderSetClipRect(Handle, ref r);
 			}
 		}
@@ -116,7 +116,7 @@ namespace SDLWrapper
 			}
 			set
 			{
-				SDL_Rect r = value.ToSDL();
+				SDL_Rect r = value.ToSDLRect();
 				SDL_RenderSetViewport(Handle, ref r);
 			}
 		}
@@ -251,7 +251,7 @@ namespace SDLWrapper
 		public void Point(IEnumerable<Point> points)
 		{
 			SDL_Point[] nativePoints = 
-				points.Select(o => o.ToSDL()).ToArray();
+				points.Select(o => o.ToSDLPoint()).ToArray();
 
 			if (SDL_RenderDrawPoints(Handle,
 				 nativePoints, nativePoints.Length) != 0)
@@ -271,7 +271,7 @@ namespace SDLWrapper
 		public void Point(IEnumerable<PointF> points)
 		{
 			SDL_FPoint[] nativePoints = 
-				points.Select(o => o.ToSDL()).ToArray();
+				points.Select(o => o.ToSDLFPoint()).ToArray();
 
 			if (SDL_RenderDrawPointsF(Handle,
 				 nativePoints, nativePoints.Length) != 0)
@@ -294,7 +294,7 @@ namespace SDLWrapper
 		public void Line(IEnumerable<Point> points)
 		{
 			SDL_Point[] nativePoints = 
-				points.Select(o => o.ToSDL()).ToArray();
+				points.Select(o => o.ToSDLPoint()).ToArray();
 
 			if (SDL_RenderDrawLines(Handle,
 				 nativePoints, nativePoints.Length) != 0)
@@ -317,7 +317,7 @@ namespace SDLWrapper
 		public void Line(IEnumerable<PointF> points)
 		{
 			SDL_FPoint[] nativePoints = 
-				points.Select(o => o.ToSDL()).ToArray();
+				points.Select(o => o.ToSDLFPoint()).ToArray();
 
 			if (SDL_RenderDrawLinesF(Handle,
 				 nativePoints, nativePoints.Length) != 0)
@@ -328,7 +328,7 @@ namespace SDLWrapper
 
 		public void Rectangle(Rectangle rect)
 		{
-			SDL_Rect r = rect.ToSDL();
+			SDL_Rect r = rect.ToSDLRect();
 
 			if (SDL_RenderDrawRect(Handle, ref r) != 0)
 			{
@@ -339,7 +339,7 @@ namespace SDLWrapper
 		public void Rectangle(IEnumerable<Rectangle> rects)
 		{
 			SDL_Rect[] nativeRects =
-				rects.Select(o => o.ToSDL()).ToArray();
+				rects.Select(o => o.ToSDLRect()).ToArray();
 
 			if (SDL_RenderDrawRects(Handle,
 				 nativeRects, nativeRects.Length) != 0)
@@ -350,7 +350,7 @@ namespace SDLWrapper
 
 		public void Rectangle(RectangleF rect)
 		{
-			SDL_FRect r = rect.ToSDL();
+			SDL_FRect r = rect.ToSDLFRect();
 
 			if (SDL_RenderDrawRectF(Handle, ref r) != 0)
 			{
@@ -361,7 +361,7 @@ namespace SDLWrapper
 		public void Rectangle(IEnumerable<RectangleF> rects)
 		{
 			SDL_FRect[] nativeRects =
-				rects.Select(o => o.ToSDL()).ToArray();
+				rects.Select(o => o.ToSDLFRect()).ToArray();
 
 			if (SDL_RenderDrawRectsF(Handle,
 				 nativeRects, nativeRects.Length) != 0)
@@ -372,7 +372,7 @@ namespace SDLWrapper
 
 		public void FillRectangle(Rectangle rect)
 		{
-			SDL_Rect r = rect.ToSDL();
+			SDL_Rect r = rect.ToSDLRect();
 
 			if (SDL_RenderFillRect(Handle, ref r) != 0)
 			{
@@ -383,7 +383,7 @@ namespace SDLWrapper
 		public void FillRectangle(IEnumerable<Rectangle> rects)
 		{
 			SDL_Rect[] nativeRects =
-				rects.Select(o => o.ToSDL()).ToArray();
+				rects.Select(o => o.ToSDLRect()).ToArray();
 
 			if (SDL_RenderFillRects(Handle,
 				 nativeRects, nativeRects.Length) != 0)
@@ -394,7 +394,7 @@ namespace SDLWrapper
 
 		public void FillRectangle(RectangleF rect)
 		{
-			SDL_FRect r = rect.ToSDL();
+			SDL_FRect r = rect.ToSDLFRect();
 
 			if (SDL_RenderFillRectF(Handle, ref r) != 0)
 			{
@@ -405,7 +405,7 @@ namespace SDLWrapper
 		public void FillRectangle(IEnumerable<RectangleF> rects)
 		{
 			SDL_FRect[] nativeRects =
-				rects.Select(o => o.ToSDL()).ToArray();
+				rects.Select(o => o.ToSDLFRect()).ToArray();
 
 			if (SDL_RenderFillRectsF(Handle,
 				 nativeRects, nativeRects.Length) != 0)
@@ -428,7 +428,7 @@ namespace SDLWrapper
 
 		public void Copy(Texture texture, Rectangle destRect)
 		{
-			SDL_Rect r = destRect.ToSDL();
+			SDL_Rect r = destRect.ToSDLRect();
 
 			if (SDL_RenderCopy(
 				 Handle,
@@ -442,7 +442,7 @@ namespace SDLWrapper
 
 		public void Copy(Rectangle sourceRect, Texture texture)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
 
 			if (SDL_RenderCopy(
 				 Handle,
@@ -459,8 +459,8 @@ namespace SDLWrapper
 			Texture texture,
 			Rectangle destRect)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
-			SDL_Rect r = destRect.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
+			SDL_Rect r = destRect.ToSDLRect();
 
 			if (SDL_RenderCopy(
 				 Handle,
@@ -480,9 +480,9 @@ namespace SDLWrapper
 			Point center,
 			RenderFlip flip = RenderFlip.None)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
-			SDL_Rect d = destRect.ToSDL();
-			SDL_Point c = center.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
+			SDL_Rect d = destRect.ToSDLRect();
+			SDL_Point c = center.ToSDLPoint();
 
 			if (SDL_RenderCopyEx(
 				 Handle,
@@ -504,8 +504,8 @@ namespace SDLWrapper
 			Point center,
 			RenderFlip flip = RenderFlip.None)
 		{
-			SDL_Rect d = destRect.ToSDL();
-			SDL_Point c = center.ToSDL();
+			SDL_Rect d = destRect.ToSDLRect();
+			SDL_Point c = center.ToSDLPoint();
 
 			if (SDL_RenderCopyEx(
 				 Handle,
@@ -526,8 +526,8 @@ namespace SDLWrapper
 			Rectangle destRect,
 			double angle)
 		{
-			SDL_Rect s = sourceRect.ToSDL();
-			SDL_Rect d = destRect.ToSDL();
+			SDL_Rect s = sourceRect.ToSDLRect();
+			SDL_Rect d = destRect.ToSDLRect();
 
 			if (SDL_RenderCopyEx(
 				 Handle,
@@ -565,7 +565,7 @@ namespace SDLWrapper
 			Point center,
 			RenderFlip flip = RenderFlip.None)
 		{
-			SDL_Point c = center.ToSDL();
+			SDL_Point c = center.ToSDLPoint();
 
 			if (SDL_RenderCopyEx(
 				 Handle,
@@ -603,7 +603,7 @@ namespace SDLWrapper
 			Rectangle destRect,
 			double angle)
 		{
-			SDL_Rect d = destRect.ToSDL();
+			SDL_Rect d = destRect.ToSDLRect();
 
 			if (SDL_RenderCopyEx(
 				 Handle,
@@ -679,6 +679,16 @@ namespace SDLWrapper
 			{
 				result.Renderer._textures.Remove(handle);
 			}
+		}
+
+		public static implicit operator IntPtr(Renderer renderer)
+		{
+			return renderer.Handle;
+		}
+
+		public static implicit operator bool(Renderer renderer)
+		{
+			return (renderer != null && renderer.Handle != IntPtr.Zero);
 		}
 
 		#region IDisposable Support

@@ -191,7 +191,7 @@ namespace SDLWrapper
 					"Texture is already locked");
 			}
 
-			SDL_Rect r = rect.ToSDL();
+			SDL_Rect r = rect.ToSDLRect();
 
 			if (SDL_LockTexture(Handle,
 				ref r, out IntPtr pixels, out int pitch) != 0)
@@ -275,7 +275,7 @@ namespace SDLWrapper
 
 		public void Update(Rectangle rect, byte[] pixels, int pitch)
 		{
-			SDL_Rect r = rect.ToSDL();
+			SDL_Rect r = rect.ToSDLRect();
 
 #if !SAFE_AS_POSSIBLE
 			unsafe
@@ -323,11 +323,21 @@ namespace SDLWrapper
 
 		public void Update(Rectangle rect, IntPtr pixels, int pitch)
 		{
-			SDL_Rect r = rect.ToSDL();
+			SDL_Rect r = rect.ToSDLRect();
 			if (SDL_UpdateTexture(Handle, ref r, pixels, pitch) != 0)
 			{
 				throw new SDLException();
 			}
+		}
+
+		public static implicit operator IntPtr(Texture texture)
+		{
+			return texture.Handle;
+		}
+
+		public static implicit operator bool(Texture texture)
+		{
+			return (texture != null && texture.Handle != IntPtr.Zero);
 		}
 
 #region IDisposable Support

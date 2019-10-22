@@ -505,7 +505,7 @@ namespace SDLWrapper
 		{
 			set
 			{
-				SDL_Rect r = value.ToSDL();
+				SDL_Rect r = value.ToSDLRect();
 				SDL_SetTextInputRect(ref r);
 			}
 		}
@@ -536,7 +536,7 @@ namespace SDLWrapper
 
 		public void Update(Rectangle rect)
 		{
-			SDL_Rect[] r = new SDL_Rect[] { rect.ToSDL() };
+			SDL_Rect[] r = new SDL_Rect[] { rect.ToSDLRect() };
 
 			if (SDL_UpdateWindowSurfaceRects(Handle, r, r.Length) != 0)
 			{
@@ -546,7 +546,7 @@ namespace SDLWrapper
 
 		public void Update(IEnumerable<Rectangle> rects)
 		{
-			SDL_Rect[] r = rects.Select(o => o.ToSDL()).ToArray();
+			SDL_Rect[] r = rects.Select(o => o.ToSDLRect()).ToArray();
 
 			if (SDL_UpdateWindowSurfaceRects(Handle, r, r.Length) != 0)
 			{
@@ -980,6 +980,24 @@ namespace SDLWrapper
 					{
 						args.Text = new string((sbyte*)e.text.text);
 					}
+#else
+					GCHandle gcHandle = GCHandle.Alloc(e, GCHandleType.Pinned);
+
+					try
+					{
+						IntPtr pEvent = gcHandle.AddrOfPinnedObject();
+
+						SDL_TextInputEvent_SAFE text = 
+							Marshal.PtrToStructure<SDL_TextInputEvent_SAFE>(
+								pEvent);
+						
+						args.Text = System.Text.Encoding.UTF8.GetString(
+							text.text);
+					}
+					finally
+					{
+						gcHandle.Free();
+					}
 #endif
 
 					OnTextInput(args);
@@ -989,6 +1007,24 @@ namespace SDLWrapper
 					unsafe
 					{
 						args.Text = new string((sbyte*)e.edit.text);
+					}
+#else
+					GCHandle gcHandle = GCHandle.Alloc(e, GCHandleType.Pinned);
+
+					try
+					{
+						IntPtr pEvent = gcHandle.AddrOfPinnedObject();
+
+						SDL_TextEditingEvent_SAFE text = 
+							Marshal.PtrToStructure<SDL_TextEditingEvent_SAFE>(
+								pEvent);
+						
+						args.Text = System.Text.Encoding.UTF8.GetString(
+							text.text);
+					}
+					finally
+					{
+						gcHandle.Free();
 					}
 #endif
 

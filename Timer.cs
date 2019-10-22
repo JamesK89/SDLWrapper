@@ -91,6 +91,16 @@ namespace SDLWrapper
 			return (_interval = e.Interval);
 		}
 
+		public static implicit operator IntPtr(Timer timer)
+		{
+			return timer.Handle;
+		}
+
+		public static implicit operator bool(Timer timer)
+		{
+			return (timer != null && timer.Handle != IntPtr.Zero);
+		}
+
 		#region IDisposable Support
 		private bool disposedValue = false; // To detect redundant calls
 
