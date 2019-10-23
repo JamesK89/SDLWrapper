@@ -11,6 +11,20 @@ using static SDL2.SDL;
 
 namespace SDLWrapper
 {
+	public enum RWopEventOverrideMode
+	{
+		/// <summary>
+		/// Continue with this request using the given arguments,
+		/// including any changes made to the event arguments.
+		/// </summary>
+		Continue = 0,
+		/// <summary>
+		/// Override this request and return given Result
+		/// from the event arguments.
+		/// </summary>
+		Ignore
+	}
+
 	// This class might be rather pointless in light of
 	// System.IO.Stream but I added it for the sake of completeness
 	// and for compatibility with native SDL functions that might
@@ -18,29 +32,66 @@ namespace SDLWrapper
 	public class ReadWriteOperation
 		: Stream, IDisposable
 	{
-		IntPtr _closePtr;
-		SDLRWopsCloseCallback _close;
-		GCHandle _closeHandle;
+		private struct RWopFunction<T>
+		{
+			public IntPtr Pointer;
+			public T Delegate;
+			public GCHandle Handle;
+		}
+		
+		private RWopFunction<SDLRWopsCloseCallback>
+			_closeBaseHandler;
+		private RWopFunction<SDLRWopsCloseCallback>
+			_closeHandler;
+		
+		private RWopFunction<SDLRWopsSizeCallback>
+			_sizeBaseHandler;
+		private RWopFunction<SDLRWopsSizeCallback>
+			_sizeHandler;
+		
+		private RWopFunction<SDLRWopsSeekCallback>
+			_seekBaseHandler;
+		private RWopFunction<SDLRWopsSeekCallback>
+			_seekHandler;
+		
+		private RWopFunction<SDLRWopsWriteCallback>
+			_writeBaseHandler;
+		private RWopFunction<SDLRWopsWriteCallback>
+			_writeHandler;
+		
+		private RWopFunction<SDLRWopsReadCallback>
+			_readBaseHandler;
+		private RWopFunction<SDLRWopsReadCallback>
+			_readHandler;
+		
+		public delegate void OnCloseEventHandler(
+			object sender,
+			RWopCloseEventArgs e);
 
-		IntPtr _sizePtr;
-		SDLRWopsSizeCallback _size;
-		GCHandle _sizeHandle;
+		public delegate void OnSeekEventHandler(
+			object sender,
+			RWopSeekEventArgs e);
 
-		IntPtr _seekPtr;
-		SDLRWopsSeekCallback _seek;
-		GCHandle _seekHandle;
+		public delegate void OnSizeEventHandler(
+			object sender,
+			RWopSizeEventArgs e);
 
-		IntPtr _readPtr;
-		SDLRWopsReadCallback _read;
-		GCHandle _readHandle;
+		public delegate void OnReadEventHandler(
+			object sender,
+			RWopReadEventArgs e);
+		
+		public delegate void OnWriteEventHandler(
+			object sender,
+			RWopWriteEventArgs e);
 
-		IntPtr _writePtr;
-		SDLRWopsWriteCallback _write;
-		GCHandle _writeHandle;
+		public event OnCloseEventHandler Closing;
+		public event OnSeekEventHandler Seeking;
+		public event OnSizeEventHandler GettingSize;
+		public event OnReadEventHandler Reading;
+		public event OnWriteEventHandler Writing;
 
-		private bool _ownCallbacks;
-
-		public ReadWriteOperation()
+		protected ReadWriteOperation()
+			: base()
 		{
 			Initialize();
 
@@ -55,6 +106,7 @@ namespace SDLWrapper
 		}
 
 		public ReadWriteOperation(string fileName, string fileMode = "r")
+			: base()
 		{
 			Initialize();
 
@@ -65,10 +117,11 @@ namespace SDLWrapper
 				throw new SDLException();
 			}
 
-			SetupFunctionPointers();
+			SetupCallbacks();
 		}
 
 		public ReadWriteOperation(byte[] data, bool @readonly = false)
+			: base()
 		{
 			Initialize();
 
@@ -93,13 +146,14 @@ namespace SDLWrapper
 				
 				FreeMemory = true;
 
-				SetupFunctionPointers();
+				SetupCallbacks();
 			}
 		}
 		
 		public ReadWriteOperation(
 			IntPtr filePointer,
 			bool autoClose = false)
+			: base()
 		{
 			Initialize();
 
@@ -110,13 +164,14 @@ namespace SDLWrapper
 				throw new SDLException();
 			}
 
-			SetupFunctionPointers();
+			SetupCallbacks();
 		}
 
 		public ReadWriteOperation(
 			IntPtr data,
 			int length,
 			bool @readonly = false)
+			: base()
 		{
 			Initialize();
 
@@ -138,9 +193,19 @@ namespace SDLWrapper
 					throw new SDLException();
 				}
 
-				SetupFunctionPointers();
+				SetupCallbacks();
 			}
 		}
+		
+#if !SAFE_AS_POSSIBLE
+		public unsafe ReadWriteOperation(
+			byte* data,
+			int length,
+			bool @readonly = false)
+			: this(new IntPtr(data), length, @readonly)
+		{
+		}
+#endif
 
 		private void Initialize()
 		{
@@ -148,20 +213,30 @@ namespace SDLWrapper
 			Memory = IntPtr.Zero;
 			FreeMemory = false;
 
-			_close = null;
-			_closePtr = IntPtr.Zero;
-			
-			_size = null;
-			_sizePtr = IntPtr.Zero;
+			_closeBaseHandler =
+				new RWopFunction<SDLRWopsCloseCallback>();
+			_closeHandler =
+				new RWopFunction<SDLRWopsCloseCallback>();
 
-			_seek = null;
-			_seekPtr = IntPtr.Zero;
+			_sizeBaseHandler = 
+				new RWopFunction<SDLRWopsSizeCallback>();
+			_sizeHandler = 
+				new RWopFunction<SDLRWopsSizeCallback>();
 
-			_read = null;
-			_readPtr = IntPtr.Zero;
+			_seekBaseHandler = 
+				new RWopFunction<SDLRWopsSeekCallback>();
+			_seekHandler =
+				new RWopFunction<SDLRWopsSeekCallback>();
 
-			_write = null;
-			_writePtr = IntPtr.Zero;
+			_readBaseHandler =
+				new RWopFunction<SDLRWopsReadCallback>();
+			_readHandler =
+				new RWopFunction<SDLRWopsReadCallback>();
+
+			_writeBaseHandler =
+				new RWopFunction<SDLRWopsWriteCallback>();
+			_writeHandler =
+				new RWopFunction<SDLRWopsWriteCallback>();
 		}
 
 		public uint Type
@@ -205,17 +280,7 @@ namespace SDLWrapper
 
 		public override bool CanWrite => throw new NotImplementedException();
 
-		public override long Length => _size(Handle);
-
-#if !SAFE_AS_POSSIBLE
-		public unsafe ReadWriteOperation(
-			byte* data,
-			int length,
-			bool @readonly = false)
-			: this(new IntPtr(data), length, @readonly)
-		{
-		}
-#endif
+		public override long Length => _sizeHandler.Delegate.Invoke(Handle);
 
 		private bool FreeMemory
 		{
@@ -241,160 +306,381 @@ namespace SDLWrapper
 			private set;
 		}
 
-		private void SetupCallback<T>(
-			T func,
-			out GCHandle handle,
-			out IntPtr ptr)
+		protected virtual void OnClose(RWopCloseEventArgs e)
 		{
-			handle = GCHandle.Alloc(func);
-			ptr = Marshal.GetFunctionPointerForDelegate<T>(func);
+			Closing?.Invoke(this, e);
 		}
 
-		protected virtual int OnCloseCallback(IntPtr context)
+		private int OnCloseCallback(IntPtr context)
 		{
-			return 0;
+			int result = 0;
+
+			RWopCloseEventArgs args = new RWopCloseEventArgs();
+
+			OnClose(args);
+
+			if (args.Override == RWopEventOverrideMode.Ignore)
+			{
+				result = args.Result;
+			}
+			else
+			{
+				if (_closeBaseHandler.Pointer != IntPtr.Zero)
+				{
+					result = _closeBaseHandler.Delegate.Invoke(
+						args.Context);
+				}
+
+				Close();
+			}
+
+			return result;
 		}
 
-		protected virtual long OnSizeCallback(IntPtr context)
+		protected virtual void OnSize(RWopSizeEventArgs e)
 		{
-			return 0;
+			GettingSize?.Invoke(this, e);
 		}
 
-		protected virtual long OnSeekCallback(
+		private long OnSizeCallback(IntPtr context)
+		{
+			long result = 0;
+
+			RWopSizeEventArgs args = new RWopSizeEventArgs();
+
+			OnSize(args);
+
+			if (args.Override == RWopEventOverrideMode.Ignore)
+			{
+				result = args.Result;
+			}
+			else
+			{
+				if (_sizeBaseHandler.Pointer != IntPtr.Zero)
+				{
+					result = _sizeBaseHandler.Delegate.Invoke(
+						args.Context);
+				}
+			}
+
+			return result;
+		}
+
+		protected virtual void OnSeek(RWopSeekEventArgs e)
+		{
+			Seeking?.Invoke(this, e);
+		}
+
+		private long OnSeekCallback(
 			IntPtr context,
 			long offset,
 			int whence)
 		{
-			return 0;
+			long result = 0;
+
+			RWopSeekEventArgs args = new RWopSeekEventArgs();
+
+			args.Context = context;
+			args.Offset = offset;
+
+			switch (whence)
+			{
+				case RW_SEEK_CUR:
+					args.Origin = SeekOrigin.Current;
+					break;
+				case RW_SEEK_END:
+					args.Origin = SeekOrigin.End;
+					break;
+				default:
+				case RW_SEEK_SET:
+					args.Origin = SeekOrigin.Begin;
+					break;
+			}
+
+			OnSeek(args);
+
+			if (args.Override == RWopEventOverrideMode.Ignore)
+			{
+				result = args.Result;
+			}
+			else
+			{
+				if (_seekBaseHandler.Pointer != IntPtr.Zero)
+				{
+					switch (args.Origin)
+					{
+						case SeekOrigin.Current:
+							whence = RW_SEEK_CUR;
+							break;
+						case SeekOrigin.End:
+							whence = RW_SEEK_END;
+							break;
+						default:
+						case SeekOrigin.Begin:
+							whence = RW_SEEK_SET;
+							break;
+					}
+
+					result = _seekBaseHandler.Delegate.Invoke(
+						args.Context, args.Offset, whence);
+				}
+			}
+
+			return result;
 		}
 
-		protected virtual uint OnReadCallback(
+		protected virtual void OnRead(RWopReadEventArgs e)
+		{
+			Reading?.Invoke(this, e);
+		}
+
+		private uint OnReadCallback(
 			IntPtr context,
 			IntPtr ptr,
 			uint size,
 			uint maxnum)
 		{
-			return 0;
+			uint result = 0;
+
+			RWopReadEventArgs args = new RWopReadEventArgs();
+
+			args.Context = context;
+			args.Data = ptr;
+			args.Size = size;
+			args.Count = maxnum;
+
+			OnRead(args);
+
+			if (args.Override == RWopEventOverrideMode.Ignore)
+			{
+				result = args.Result;
+			}
+			else
+			{
+				if (_readBaseHandler.Pointer != IntPtr.Zero)
+				{
+					result = _readBaseHandler.Delegate.Invoke(
+						args.Context, args.Data, args.Size, args.Count);
+				}
+			}
+
+			return result;
 		}
 
-		protected virtual uint OnWriteCallback(
+		protected virtual void OnWrite(RWopWriteEventArgs e)
+		{
+			Writing?.Invoke(this, e);
+		}
+
+		private uint OnWriteCallback(
 			IntPtr context,
 			IntPtr ptr,
 			uint size,
 			uint maxnum)
 		{
-			return 0;
+			uint result = 0;
+
+			RWopWriteEventArgs args = new RWopWriteEventArgs();
+
+			args.Context = context;
+			args.Data = ptr;
+			args.Size = size;
+			args.Count = maxnum;
+
+			OnWrite(args);
+
+			if (args.Override == RWopEventOverrideMode.Ignore)
+			{
+				result = args.Result;
+			}
+			else
+			{
+				if (_writeBaseHandler.Pointer != IntPtr.Zero)
+				{
+					result = _writeBaseHandler.Delegate.Invoke(
+						context, ptr, size, maxnum);
+				}
+			}
+
+			return result;
 		}
 
 		private void SetupFunctionPointers()
 		{
+			IntPtr closePtr = IntPtr.Zero;
+			IntPtr sizePtr = IntPtr.Zero;
+			IntPtr seekPtr = IntPtr.Zero;
+			IntPtr readPtr = IntPtr.Zero;
+			IntPtr writePtr = IntPtr.Zero;
+
 #if !SAFE_AS_POSSIBLE
 			unsafe
 			{
 				SDL_RWops* ops = (SDL_RWops*)Handle.ToPointer();
 
-				_closePtr = ops->close;
-				_sizePtr = ops->size;
-				_seekPtr = ops->seek;
-				_readPtr = ops->read;
-				_writePtr = ops->write;
+				closePtr = ops->close;
+				sizePtr = ops->size;
+				seekPtr = ops->seek;
+				readPtr = ops->read;
+				writePtr = ops->write;
 			}
 #else
 			SDL_RWops ops =
 				Marshal.PtrToStructure<SDL_RWops>(Handle);
 
-			_closePtr = ops.close;
-			_sizePtr = ops.size;
-			_seekPtr = ops.seek;
-			_readPtr = ops.read;
-			_writePtr = ops.write;
+			closePtr = ops.close;
+			sizePtr = ops.size;
+			seekPtr = ops.seek;
+			readPtr = ops.read;
+			writePtr = ops.write;
 #endif
 
-			if (_closePtr != IntPtr.Zero)
+			if (closePtr != IntPtr.Zero)
 			{
-				_close =
+				_closeBaseHandler = new RWopFunction<SDLRWopsCloseCallback>();
+				_closeBaseHandler.Delegate =
 					Marshal.GetDelegateForFunctionPointer
 					<SDLRWopsCloseCallback>(
-						_closePtr);
+						closePtr);
+				_closeBaseHandler.Pointer = closePtr;
 			}
 
-			if (_sizePtr != IntPtr.Zero)
+			if (sizePtr != IntPtr.Zero)
 			{
-				_size =
+				_sizeBaseHandler = new RWopFunction<SDLRWopsSizeCallback>();
+				_sizeBaseHandler.Delegate =
 					Marshal.GetDelegateForFunctionPointer
 					<SDLRWopsSizeCallback>(
-						_sizePtr);
+						sizePtr);
+				_sizeBaseHandler.Pointer = sizePtr;
 			}
 
-			if (_seekPtr != IntPtr.Zero)
+			if (seekPtr != IntPtr.Zero)
 			{
-				_seek =
+				_seekBaseHandler = new RWopFunction<SDLRWopsSeekCallback>();
+				_seekBaseHandler.Delegate =
 					Marshal.GetDelegateForFunctionPointer
 					<SDLRWopsSeekCallback>(
-						_seekPtr);
+						seekPtr);
+				_seekBaseHandler.Pointer = seekPtr;
 			}
 
-			if (_readPtr != IntPtr.Zero)
+			if (readPtr != IntPtr.Zero)
 			{
-				_read =
+				_readBaseHandler = new RWopFunction<SDLRWopsReadCallback>();
+				_readBaseHandler.Delegate =
 					Marshal.GetDelegateForFunctionPointer
 					<SDLRWopsReadCallback>(
-						_closePtr);
+						readPtr);
+				_readBaseHandler.Pointer = readPtr;
 			}
 
-			if (_writePtr != IntPtr.Zero)
+			if (writePtr != IntPtr.Zero)
 			{
-				_write =
+				_writeBaseHandler = new RWopFunction<SDLRWopsWriteCallback>();
+				_writeBaseHandler.Delegate =
 					Marshal.GetDelegateForFunctionPointer
 					<SDLRWopsWriteCallback>(
-						_writePtr);
+						writePtr);
+				_writeBaseHandler.Pointer = writePtr;
 			}
+		}
 
-			_ownCallbacks = false;
+		private RWopFunction<T> SetupCallback<T>(T method)
+		{
+			RWopFunction<T> result = default(RWopFunction<T>);
+
+			result.Delegate = method;
+			result.Handle = GCHandle.Alloc(result.Delegate);
+			result.Pointer = Marshal.GetFunctionPointerForDelegate<T>(method);
+
+			return result;
 		}
 
 		private void SetupCallbacks()
 		{
-			_close = new SDLRWopsCloseCallback(OnCloseCallback);
-			SetupCallback(_close, out _closeHandle, out _closePtr);
+			SetupFunctionPointers();
 
-			_size = new SDLRWopsSizeCallback(OnSizeCallback);
-			SetupCallback(_size, out _sizeHandle, out _sizePtr);
-
-			_seek = new SDLRWopsSeekCallback(OnSeekCallback);
-			SetupCallback(_seek, out _seekHandle, out _seekPtr);
-
-			_read = new SDLRWopsReadCallback(OnReadCallback);
-			SetupCallback(_read, out _readHandle, out _readPtr);
-
-			_write = new SDLRWopsWriteCallback(OnWriteCallback);
-			SetupCallback(_write, out _writeHandle, out _writePtr);
+			_closeHandler = SetupCallback<SDLRWopsCloseCallback>(
+				OnCloseCallback);
+			_sizeHandler = SetupCallback<SDLRWopsSizeCallback>(
+				OnSizeCallback);
+			_seekHandler = SetupCallback<SDLRWopsSeekCallback>(
+				OnSeekCallback);
+			_readHandler = SetupCallback<SDLRWopsReadCallback>(
+				OnReadCallback);
+			_writeHandler = SetupCallback<SDLRWopsWriteCallback>(
+				OnWriteCallback);
 
 #if !SAFE_AS_POSSIBLE
 			unsafe
 			{
 				SDL_RWops* ops = (SDL_RWops*)Handle.ToPointer();
 
-				ops->close = _closePtr;
-				ops->size = _sizePtr;
-				ops->seek = _seekPtr;
-				ops->read = _readPtr;
-				ops->write = _writePtr;
+				ops->close = _closeHandler.Pointer;
+				ops->size = _sizeHandler.Pointer;
+				ops->seek = _seekHandler.Pointer;
+				ops->read = _readHandler.Pointer;
+				ops->write = _writeHandler.Pointer;
 			}
 #else
 			SDL_RWops ops =
 				Marshal.PtrToStructure<SDL_RWops>(Handle);
 
-			ops.close = _closePtr;
-			ops.size = _sizePtr;
-			ops.seek = _seekPtr;
-			ops.read = _readPtr;
-			ops.write = _writePtr;
+			ops.close = _closeHandler.Pointer;
+			ops.size = _sizeHandler.Pointer;
+			ops.seek = _seekHandler.Pointer;
+			ops.read = _readHandler.Pointer;
+			ops.write = _writeHandler.Pointer;
 
 			Marshal.StructureToPtr<SDL_RWops>(ops, Handle, false);
 #endif
+		}
 
-			_ownCallbacks = true;
+		private void CleanupCallback<T>(ref RWopFunction<T> func)
+		{
+			if (func.Delegate != null)
+			{
+				func.Handle.Free();
+				func.Delegate = default(T);
+				func.Pointer = IntPtr.Zero;
+			}
+		}
+
+		private void CleanupCallbacks()
+		{
+			CleanupCallback(ref _closeHandler);
+			CleanupCallback(ref _sizeHandler);
+			CleanupCallback(ref _seekHandler);
+			CleanupCallback(ref _readHandler);
+			CleanupCallback(ref _writeHandler);
+		}
+
+		private void RestoreFunctionPointers()
+		{
+#if !SAFE_AS_POSSIBLE
+			unsafe
+			{
+				SDL_RWops* ops = (SDL_RWops*)Handle.ToPointer();
+
+				ops->close = _closeBaseHandler.Pointer;
+				ops->size = _sizeBaseHandler.Pointer;
+				ops->seek = _seekBaseHandler.Pointer;
+				ops->read = _readBaseHandler.Pointer;
+				ops->write = _writeBaseHandler.Pointer;
+			}
+#else
+			SDL_RWops ops =
+				Marshal.PtrToStructure<SDL_RWops>(Handle);
+
+			ops.close = _closeBaseHandler.Pointer;
+			ops.size = _sizeBaseHandler.Pointer;
+			ops.seek = _seekBaseHandler.Pointer;
+			ops.read = _readBaseHandler.Pointer;
+			ops.write = _writeBaseHandler.Pointer;
+
+			Marshal.StructureToPtr<SDL_RWops>(ops, Handle, false);
+#endif
 		}
 
 		public override void Flush()
@@ -432,6 +718,41 @@ namespace SDLWrapper
 		public override void SetLength(long value)
 		{
 			throw new NotImplementedException();
+		}
+
+		public byte ReadUInt8()
+		{
+			return SDL_ReadU8(Handle);
+		}
+
+		public ushort ReadUInt16()
+		{
+			return SDL_ReadLE16(Handle);
+		}
+
+		public ushort ReadUInt16Big()
+		{
+			return SDL_ReadBE16(Handle);
+		}
+
+		public uint ReadUInt32()
+		{
+			return SDL_ReadLE32(Handle);
+		}
+
+		public uint ReadUInt32Big()
+		{
+			return SDL_ReadBE16(Handle);
+		}
+
+		public ulong ReadUInt64()
+		{
+			return SDL_ReadLE64(Handle);
+		}
+
+		public ulong ReadUInt64Big()
+		{
+			return SDL_ReadBE64(Handle);
 		}
 
 		public override int Read(byte[] buffer, int offset, int count)
@@ -499,6 +820,8 @@ namespace SDLWrapper
 
 		public override void Close()
 		{
+			RestoreFunctionPointers();
+
 			if (Handle != IntPtr.Zero)
 			{
 				if (SDL_RWclose(Handle) != 0)
@@ -519,55 +842,7 @@ namespace SDLWrapper
 				Memory = IntPtr.Zero;
 			}
 
-			if (_close != null)
-			{
-				if (_ownCallbacks)
-				{
-					_closeHandle.Free();
-				}
-
-				_close = null;
-			}
-
-			if (_size != null)
-			{
-				if (_ownCallbacks)
-				{
-					_sizeHandle.Free();
-				}
-
-				_size = null;
-			}
-
-			if (_read != null)
-			{
-				if (_ownCallbacks)
-				{
-					_readHandle.Free();
-				}
-
-				_read = null;
-			}
-
-			if (_write != null)
-			{
-				if (_ownCallbacks)
-				{
-					_writeHandle.Free();
-				}
-
-				_write = null;
-			}
-
-			if (_seek != null)
-			{
-				if (_ownCallbacks)
-				{
-					_seekHandle.Free();
-				}
-
-				_seek = null;
-			}
+			CleanupCallbacks();
 		}
 
 		public static implicit operator IntPtr(ReadWriteOperation RWops)

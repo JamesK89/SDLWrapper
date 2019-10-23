@@ -737,6 +737,7 @@ namespace SDLWrapper
 			{
 				SDL_Point p = new SDL_Point();
 
+#if !SAFE_AS_POSSIBLE
 				unsafe
 				{
 					if (area != IntPtr.Zero)
@@ -747,6 +748,12 @@ namespace SDLWrapper
 						p.y = pArea->y;
 					}
 				}
+#else
+				if (area != IntPtr.Zero)
+				{
+					p = Marshal.PtrToStructure<SDL_Point>(area);
+				}
+#endif
 
 				WindowHitTestResult testResult =
 					OnHitTest(new Point(p.x, p.y));
@@ -981,23 +988,7 @@ namespace SDLWrapper
 						args.Text = new string((sbyte*)e.text.text);
 					}
 #else
-					GCHandle gcHandle = GCHandle.Alloc(e, GCHandleType.Pinned);
-
-					try
-					{
-						IntPtr pEvent = gcHandle.AddrOfPinnedObject();
-
-						SDL_TextInputEvent_SAFE text = 
-							Marshal.PtrToStructure<SDL_TextInputEvent_SAFE>(
-								pEvent);
-						
-						args.Text = System.Text.Encoding.UTF8.GetString(
-							text.text);
-					}
-					finally
-					{
-						gcHandle.Free();
-					}
+					args.Text = e.text.ToSafe().text;
 #endif
 
 					OnTextInput(args);
@@ -1009,23 +1000,7 @@ namespace SDLWrapper
 						args.Text = new string((sbyte*)e.edit.text);
 					}
 #else
-					GCHandle gcHandle = GCHandle.Alloc(e, GCHandleType.Pinned);
-
-					try
-					{
-						IntPtr pEvent = gcHandle.AddrOfPinnedObject();
-
-						SDL_TextEditingEvent_SAFE text = 
-							Marshal.PtrToStructure<SDL_TextEditingEvent_SAFE>(
-								pEvent);
-						
-						args.Text = System.Text.Encoding.UTF8.GetString(
-							text.text);
-					}
-					finally
-					{
-						gcHandle.Free();
-					}
+					args.Text = e.edit.ToSafe().text;
 #endif
 
 					OnTextEdit(args);

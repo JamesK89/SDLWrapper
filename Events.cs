@@ -87,4 +87,157 @@ namespace SDLWrapper
 			set;
 		}
 	}
+	
+	public class RWopCloseEventArgs : EventArgs
+	{
+		public IntPtr Context
+		{
+			get;
+			set;
+		} = IntPtr.Zero;
+		
+		public RWopEventOverrideMode Override
+		{
+			get;
+			set;
+		} = RWopEventOverrideMode.Continue;
+
+		public int Result
+		{
+			get;
+			set;
+		} = 0;
+	}
+	
+	public class RWopSeekEventArgs : EventArgs
+	{
+		public IntPtr Context
+		{
+			get;
+			set;
+		} = IntPtr.Zero;
+
+		public RWopEventOverrideMode Override
+		{
+			get;
+			set;
+		} = RWopEventOverrideMode.Continue;
+
+		public long Result
+		{
+			get;
+			set;
+		} = 0;
+
+		public long Offset
+		{
+			get;
+			set;
+		} = 0;
+
+		public System.IO.SeekOrigin Origin
+		{
+			get;
+			set;
+		} = System.IO.SeekOrigin.Begin;
+	}
+	
+	public class RWopSizeEventArgs : EventArgs
+	{
+		public IntPtr Context
+		{
+			get;
+			set;
+		} = IntPtr.Zero;
+		
+		public RWopEventOverrideMode Override
+		{
+			get;
+			set;
+		} = RWopEventOverrideMode.Continue;
+
+		public long Result
+		{
+			get;
+			set;
+		} = 0;
+	}
+
+	public class RWopReadEventArgs : EventArgs
+	{
+		public IntPtr Context
+		{
+			get;
+			set;
+		} = IntPtr.Zero;
+		
+		public RWopEventOverrideMode Override
+		{
+			get;
+			set;
+		} = RWopEventOverrideMode.Continue;
+
+		public uint Result
+		{
+			get;
+			set;
+		} = 0;
+
+		public IntPtr Data
+		{
+			get;
+			set;
+		} = IntPtr.Zero;
+
+		public uint Size
+		{
+			get;
+			set;
+		} = 0;
+
+		public uint Count
+		{
+			get;
+			set;
+		} = 0;
+	}
+	
+	public class RWopWriteEventArgs : EventArgs
+	{
+		public IntPtr Context
+		{
+			get;
+			set;
+		} = IntPtr.Zero;
+		
+		public RWopEventOverrideMode Override
+		{
+			get;
+			set;
+		} = RWopEventOverrideMode.Continue;
+
+		public uint Result
+		{
+			get;
+			set;
+		} = 0;
+
+		public IntPtr Data
+		{
+			get;
+			set;
+		} = IntPtr.Zero;
+
+		public uint Size
+		{
+			get;
+			set;
+		} = 0;
+
+		public uint Count
+		{
+			get;
+			set;
+		} = 0;
+	}
 }

@@ -94,10 +94,10 @@ namespace SDLWrapper
 				unsafe
 				{
 					return ((SDL_Palette*)Handle.ToPointer())->ncolors;
+				}
 #else
 					return _palette.ncolors;
 #endif
-				}
 			}
 		}
 
@@ -152,7 +152,7 @@ namespace SDLWrapper
 #else
 			IntPtr pColors = _palette.colors;
 			
-			for (int i = 0; i < _colors.Length; i++)
+			for (int i = 0; i < _palette.ncolors; i++)
 			{
 				result.Add(Marshal.PtrToStructure<SDL_Color>(pColors));
 
@@ -214,6 +214,7 @@ namespace SDLWrapper
 			Dispose(true);
 			GC.SuppressFinalize(this);
 		}
+#endregion
 
 		public IEnumerator<Color> GetEnumerator()
 		{
@@ -224,6 +225,5 @@ namespace SDLWrapper
 		{
 			return (IEnumerator)GetEnumerator();
 		}
-		#endregion
 	}
 }
