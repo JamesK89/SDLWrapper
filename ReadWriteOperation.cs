@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Drawing;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -102,6 +103,8 @@ namespace SDLWrapper
 				throw new SDLException();
 			}
 
+			IsOwner = true;
+
 			SetupCallbacks();
 		}
 
@@ -116,6 +119,25 @@ namespace SDLWrapper
 			{
 				throw new SDLException();
 			}
+
+			SetupCallbacks();
+		}
+
+		public ReadWriteOperation(Stream baseStream)
+			: base()
+		{
+			Initialize();
+
+			BaseStream = baseStream;
+
+			Handle = SDL_AllocRW();
+
+			if (Handle == IntPtr.Zero)
+			{
+				throw new SDLException();
+			}
+
+			IsOwner = true;
 
 			SetupCallbacks();
 		}
@@ -212,6 +234,7 @@ namespace SDLWrapper
 			Handle = IntPtr.Zero;
 			Memory = IntPtr.Zero;
 			FreeMemory = false;
+			IsOwner = false;
 
 			_closeBaseHandler =
 				new RWopFunction<SDLRWopsCloseCallback>();
@@ -239,6 +262,12 @@ namespace SDLWrapper
 				new RWopFunction<SDLRWopsWriteCallback>();
 		}
 
+		public Stream BaseStream
+		{
+			get;
+			private set;
+		}
+
 		public uint Type
 		{
 			get
@@ -259,6 +288,12 @@ namespace SDLWrapper
 			}
 		}
 
+		private bool IsOwner
+		{
+			get;
+			set;
+		}
+
 		public override long Position
 		{
 			get
@@ -273,14 +308,18 @@ namespace SDLWrapper
 				}
 			}
 		}
-		
-		public override bool CanRead => throw new NotImplementedException();
 
-		public override bool CanSeek => throw new NotImplementedException();
+		public override bool CanRead => 
+			BaseStream?.CanRead ?? throw new NotImplementedException();
 
-		public override bool CanWrite => throw new NotImplementedException();
+		public override bool CanSeek => 
+			BaseStream?.CanSeek ?? throw new NotImplementedException();
 
-		public override long Length => _sizeHandler.Delegate.Invoke(Handle);
+		public override bool CanWrite => 
+			BaseStream?.CanWrite ?? throw new NotImplementedException();
+
+		public override long Length => 
+			_sizeHandler.Delegate.Invoke(Handle);
 
 		private bool FreeMemory
 		{
@@ -317,6 +356,10 @@ namespace SDLWrapper
 
 			RWopCloseEventArgs args = new RWopCloseEventArgs();
 
+			args.Context = Handle;
+			args.Override = RWopEventOverrideMode.Continue;
+			args.Result = result;
+
 			OnClose(args);
 
 			if (args.Override == RWopEventOverrideMode.Ignore)
@@ -325,13 +368,22 @@ namespace SDLWrapper
 			}
 			else
 			{
-				if (_closeBaseHandler.Pointer != IntPtr.Zero)
+				if (IsOwner)
+				{
+					result = 0;
+					SDL_FreeRW(Handle);
+				}
+				else if (_closeBaseHandler.Pointer != IntPtr.Zero)
 				{
 					result = _closeBaseHandler.Delegate.Invoke(
 						args.Context);
 				}
 
-				Close();
+				if (result == 0)
+				{
+					Handle = IntPtr.Zero;
+					Close();
+				}
 			}
 
 			return result;
@@ -348,6 +400,10 @@ namespace SDLWrapper
 
 			RWopSizeEventArgs args = new RWopSizeEventArgs();
 
+			args.Context = context;
+			args.Override = RWopEventOverrideMode.Continue;
+			args.Result = result;
+
 			OnSize(args);
 
 			if (args.Override == RWopEventOverrideMode.Ignore)
@@ -360,6 +416,10 @@ namespace SDLWrapper
 				{
 					result = _sizeBaseHandler.Delegate.Invoke(
 						args.Context);
+				}
+				else if (BaseStream != null)
+				{
+					return BaseStream.Length;
 				}
 			}
 
@@ -382,6 +442,7 @@ namespace SDLWrapper
 
 			args.Context = context;
 			args.Offset = offset;
+			args.Override = RWopEventOverrideMode.Continue;
 
 			switch (whence)
 			{
@@ -424,6 +485,10 @@ namespace SDLWrapper
 					result = _seekBaseHandler.Delegate.Invoke(
 						args.Context, args.Offset, whence);
 				}
+				else if (BaseStream != null)
+				{
+					BaseStream.Seek(args.Offset, args.Origin);
+				}
 			}
 
 			return result;
@@ -445,6 +510,7 @@ namespace SDLWrapper
 			RWopReadEventArgs args = new RWopReadEventArgs();
 
 			args.Context = context;
+			args.Override = RWopEventOverrideMode.Continue;
 			args.Data = ptr;
 			args.Size = size;
 			args.Count = maxnum;
@@ -461,6 +527,19 @@ namespace SDLWrapper
 				{
 					result = _readBaseHandler.Delegate.Invoke(
 						args.Context, args.Data, args.Size, args.Count);
+				}
+				else if (BaseStream != null)
+				{
+					result = 0;
+
+					byte[] buffer = new byte[size * maxnum];
+					int numRead = BaseStream.Read(buffer, 0, buffer.Length);
+
+					if (numRead > 0)
+					{
+						Marshal.Copy(buffer, 0, ptr, numRead);
+						result = (uint)numRead;
+					}
 				}
 			}
 
@@ -483,6 +562,7 @@ namespace SDLWrapper
 			RWopWriteEventArgs args = new RWopWriteEventArgs();
 
 			args.Context = context;
+			args.Override = RWopEventOverrideMode.Continue;
 			args.Data = ptr;
 			args.Size = size;
 			args.Count = maxnum;
@@ -499,6 +579,13 @@ namespace SDLWrapper
 				{
 					result = _writeBaseHandler.Delegate.Invoke(
 						context, ptr, size, maxnum);
+				}
+				else if (BaseStream != null)
+				{
+					byte[] buffer = new byte[size * maxnum];
+					Marshal.Copy(ptr, buffer, 0, buffer.Length);
+					BaseStream.Write(buffer, 0, buffer.Length);
+					result = (uint)buffer.Length;
 				}
 			}
 
@@ -656,36 +743,14 @@ namespace SDLWrapper
 			CleanupCallback(ref _writeHandler);
 		}
 
-		private void RestoreFunctionPointers()
-		{
-#if !SAFE_AS_POSSIBLE
-			unsafe
-			{
-				SDL_RWops* ops = (SDL_RWops*)Handle.ToPointer();
-
-				ops->close = _closeBaseHandler.Pointer;
-				ops->size = _sizeBaseHandler.Pointer;
-				ops->seek = _seekBaseHandler.Pointer;
-				ops->read = _readBaseHandler.Pointer;
-				ops->write = _writeBaseHandler.Pointer;
-			}
-#else
-			SDL_RWops ops =
-				Marshal.PtrToStructure<SDL_RWops>(Handle);
-
-			ops.close = _closeBaseHandler.Pointer;
-			ops.size = _sizeBaseHandler.Pointer;
-			ops.seek = _seekBaseHandler.Pointer;
-			ops.read = _readBaseHandler.Pointer;
-			ops.write = _writeBaseHandler.Pointer;
-
-			Marshal.StructureToPtr<SDL_RWops>(ops, Handle, false);
-#endif
-		}
-
 		public override void Flush()
 		{
-			throw new NotImplementedException();
+			if (BaseStream == null)
+			{
+				throw new NotImplementedException();
+			}
+
+			BaseStream?.Flush();
 		}
 
 		public override long Seek(long offset, SeekOrigin origin)
@@ -717,7 +782,12 @@ namespace SDLWrapper
 
 		public override void SetLength(long value)
 		{
-			throw new NotImplementedException();
+			if (BaseStream == null)
+			{
+				throw new NotImplementedException();
+			}
+
+			BaseStream.SetLength(value);
 		}
 
 		public byte ReadUInt8()
@@ -820,8 +890,6 @@ namespace SDLWrapper
 
 		public override void Close()
 		{
-			RestoreFunctionPointers();
-
 			if (Handle != IntPtr.Zero)
 			{
 				if (SDL_RWclose(Handle) != 0)
@@ -842,6 +910,12 @@ namespace SDLWrapper
 				Memory = IntPtr.Zero;
 			}
 
+			if (BaseStream != null)
+			{
+				BaseStream.Close();
+				BaseStream = null;
+			}
+			
 			CleanupCallbacks();
 		}
 
