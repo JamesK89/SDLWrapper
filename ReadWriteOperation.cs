@@ -499,46 +499,49 @@ namespace SDLWrapper
 			Reading?.Invoke(this, e);
 		}
 
-		private uint OnReadCallback(
+		private IntPtr OnReadCallback(
 			IntPtr context,
 			IntPtr ptr,
-			uint size,
-			uint maxnum)
+			IntPtr size,
+			IntPtr maxnum)
 		{
-			uint result = 0;
+			IntPtr result = IntPtr.Zero;
 
 			RWopReadEventArgs args = new RWopReadEventArgs();
 
 			args.Context = context;
 			args.Override = RWopEventOverrideMode.Continue;
 			args.Data = ptr;
-			args.Size = size;
-			args.Count = maxnum;
+			args.Size = (uint)size.ToInt64();
+			args.Count = (uint)maxnum.ToInt64();
 
 			OnRead(args);
 
 			if (args.Override == RWopEventOverrideMode.Ignore)
 			{
-				result = args.Result;
+				result = new IntPtr(args.Result);
 			}
 			else
 			{
 				if (_readBaseHandler.Pointer != IntPtr.Zero)
 				{
 					result = _readBaseHandler.Delegate.Invoke(
-						args.Context, args.Data, args.Size, args.Count);
+						args.Context,
+						args.Data,
+						new IntPtr(args.Size),
+						new IntPtr(args.Count));
 				}
 				else if (BaseStream != null)
 				{
-					result = 0;
+					result = IntPtr.Zero;
 
-					byte[] buffer = new byte[size * maxnum];
+					byte[] buffer = new byte[args.Size * args.Count];
 					int numRead = BaseStream.Read(buffer, 0, buffer.Length);
 
 					if (numRead > 0)
 					{
 						Marshal.Copy(buffer, 0, ptr, numRead);
-						result = (uint)numRead;
+						result = new IntPtr(numRead);
 					}
 				}
 			}
@@ -551,41 +554,44 @@ namespace SDLWrapper
 			Writing?.Invoke(this, e);
 		}
 
-		private uint OnWriteCallback(
+		private IntPtr OnWriteCallback(
 			IntPtr context,
 			IntPtr ptr,
-			uint size,
-			uint maxnum)
+			IntPtr size,
+			IntPtr maxnum)
 		{
-			uint result = 0;
+			IntPtr result = IntPtr.Zero;
 
 			RWopWriteEventArgs args = new RWopWriteEventArgs();
 
 			args.Context = context;
 			args.Override = RWopEventOverrideMode.Continue;
 			args.Data = ptr;
-			args.Size = size;
-			args.Count = maxnum;
+			args.Size = (uint)size.ToInt64();
+			args.Count = (uint)maxnum.ToInt64();
 
 			OnWrite(args);
 
 			if (args.Override == RWopEventOverrideMode.Ignore)
 			{
-				result = args.Result;
+				result = new IntPtr(args.Result);
 			}
 			else
 			{
 				if (_writeBaseHandler.Pointer != IntPtr.Zero)
 				{
 					result = _writeBaseHandler.Delegate.Invoke(
-						context, ptr, size, maxnum);
+						context,
+						ptr,
+						new IntPtr(args.Size),
+						new IntPtr(args.Count));
 				}
 				else if (BaseStream != null)
 				{
-					byte[] buffer = new byte[size * maxnum];
+					byte[] buffer = new byte[args.Size * args.Count];
 					Marshal.Copy(ptr, buffer, 0, buffer.Length);
 					BaseStream.Write(buffer, 0, buffer.Length);
-					result = (uint)buffer.Length;
+					result = new IntPtr(buffer.Length);
 				}
 			}
 
@@ -835,7 +841,10 @@ namespace SDLWrapper
 				fixed (byte* pBuffer = &buffer[offset])
 				{
 					result = (int)SDL_RWread(
-						Handle, new IntPtr(pBuffer), (uint)count, 1);
+						Handle,
+						new IntPtr(pBuffer),
+						new IntPtr(count),
+						new IntPtr(1));
 				}
 			}
 #else
@@ -866,7 +875,11 @@ namespace SDLWrapper
 			{
 				fixed (byte* pBuffer = &buffer[offset])
 				{
-					SDL_RWwrite(Handle, new IntPtr(pBuffer), (uint)count, 1);
+					SDL_RWwrite(
+						Handle,
+						new IntPtr(pBuffer),
+						new IntPtr(count),
+						new IntPtr(1));
 				}
 			}
 #else

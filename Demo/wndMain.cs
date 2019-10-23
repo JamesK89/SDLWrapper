@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,8 @@ namespace SDLWrapper.Demo
 			Size = new Size(800, 600);
 			IsResizable = false;
 			Title = "Demo";
-			Background = Color.Black;
+			Background = Renderer.LoadTexture(
+				Path.Combine(Environment.CurrentDirectory, "Omega.bmp"));
 			InitStarfields();
 			Show();
 		}
@@ -58,7 +60,7 @@ namespace SDLWrapper.Demo
 				Color.White);
 		}
 
-		public Color Background
+		public Texture Background
 		{
 			get;
 			set;
@@ -73,13 +75,13 @@ namespace SDLWrapper.Demo
 		protected override void OnClose()
 		{
 			Program.Quit = true;
+			Background.Dispose();
 			base.OnClose();
 		}
 
 		public void Draw()
 		{
-			Renderer.Color = Background;
-			Renderer.Clear();
+			Renderer.Copy(Background);
 
 			for (int i = 0; i < _starfieds.Length; i++)
 			{
