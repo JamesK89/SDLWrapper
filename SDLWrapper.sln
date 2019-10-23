@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDLWrapper", "SDLWrapper.cs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDL2-CS", "SDL2-CS\SDL2-CS.csproj", "{85480198-8711-4355-830E-72FD794AD3F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{85480198-8711-4355-830E-72FD794AD3F6}.Release|x64.Build.0 = Release|x64
 		{85480198-8711-4355-830E-72FD794AD3F6}.Release|x86.ActiveCfg = Release|x86
 		{85480198-8711-4355-830E-72FD794AD3F6}.Release|x86.Build.0 = Release|x86
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Debug|x64.ActiveCfg = Debug|x64
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Debug|x64.Build.0 = Debug|x64
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Debug|x86.ActiveCfg = Debug|x86
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Debug|x86.Build.0 = Debug|x86
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Release|x64.ActiveCfg = Release|Any CPU
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Release|x64.Build.0 = Release|Any CPU
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Release|x86.ActiveCfg = Release|Any CPU
+		{A6C7719E-F85A-4F2A-BC4A-8253F59DACBB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
