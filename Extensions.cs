@@ -512,5 +512,261 @@ namespace SDLWrapper
 
 			return result;
 		}
+
+		public static bool ToBool(
+			this SDL_bool @this)
+		{
+			return (@this == SDL_bool.SDL_TRUE);
+		}
+
+		public static SDL_bool ToSDLBool(
+			this bool @this)
+		{
+			return @this ? SDL_bool.SDL_TRUE : SDL_bool.SDL_FALSE;
+		}
+
+		public static SDL_Point ToSDLPoint(
+			this Point point)
+		{
+			SDL_Point p = new SDL_Point();
+
+			p.x = point.X;
+			p.y = point.Y;
+
+			return p;
+		}
+
+		public static Point ToPoint(
+			this SDL_Point point)
+		{
+			return new Point(point.x, point.y);
+		}
+
+		public static SDL_FPoint ToSDLFPoint(
+			this PointF point)
+		{
+			SDL_FPoint p = new SDL_FPoint();
+
+			p.x = point.X;
+			p.y = point.Y;
+
+			return p;
+		}
+
+		public static PointF ToPointF(
+			this SDL_FPoint point)
+		{
+			return new PointF(point.x, point.y);
+		}
+
+		public static SDL_Rect ToSDLRect(
+			this Rectangle rect)
+		{
+			SDL_Rect r = new SDL_Rect();
+
+			r.x = rect.X;
+			r.y = rect.Y;
+			r.w = rect.Width;
+			r.h = rect.Height;
+
+			return r;
+		}
+
+		public static Rectangle ToRectangle(
+			this SDL_Rect rect)
+		{
+			return new Rectangle(rect.x, rect.y, rect.w, rect.h);
+		}
+
+		public static SDL_FRect ToSDLFRect(
+			this RectangleF rect)
+		{
+			SDL_FRect r = new SDL_FRect();
+
+			r.x = rect.X;
+			r.y = rect.Y;
+			r.w = rect.Width;
+			r.h = rect.Height;
+
+			return r;
+		}
+
+		public static RectangleF ToRectangleF(
+			this SDL_FRect rect)
+		{
+			return new RectangleF(rect.x, rect.y, rect.w, rect.h);
+		}
+
+		public static Color ToColor(
+			this SDL_Color color)
+		{
+			return Color.FromArgb(color.a, color.r, color.g, color.b);
+		}
+
+		public static SDL_Color ToSDLColor(
+			this Color color)
+		{
+			SDL_Color result = new SDL_Color();
+
+			result.r = color.R;
+			result.g = color.G;
+			result.b = color.B;
+			result.a = color.A;
+
+			return result;
+		}
+
+		public static uint ToSDLPixel(
+			this Color color,
+			IntPtr surface)
+		{
+			uint pixel = 0;
+
+#if !SAFE_AS_POSSIBLE
+			unsafe
+			{
+				pixel = 
+					SDL_MapRGBA(
+						((SDL_Surface*)surface.ToPointer())->format,
+						color.R,
+						color.G,
+						color.B,
+						color.A);
+			}
+#else
+			SDL_Surface surf = new SDL_Surface();
+			Marshal.PtrToStructure(surface, surf);
+			pixel = color.ToSDLPixel(ref surf);
+#endif
+
+			return pixel;
+		}
+
+		public static uint ToSDLPixel(
+			this Color color,
+			ref SDL_Surface surface)
+		{
+			return SDL_MapRGBA(
+						surface.format,
+						color.R,
+						color.G,
+						color.B,
+						color.A);
+		}
+
+		public static Color ToColorFromSDLPixel(
+			this uint pixel,
+			IntPtr surface)
+		{
+			Color result = Color.Black;
+
+#if !SAFE_AS_POSSIBLE
+			unsafe
+			{
+				SDL_GetRGBA(
+					pixel,
+					((SDL_Surface*)surface.ToPointer())->format,
+					out byte r,
+					out byte g,
+					out byte b,
+					out byte a);
+
+				result = Color.FromArgb(a, r, g, b);
+			}
+#else
+			SDL_Surface surf = new SDL_Surface();
+			Marshal.PtrToStructure(surface, surf);
+			result = pixel.ToColorFromSDLPixel(ref surf);
+#endif
+
+			return result;
+		}
+
+		public static Color ToColorFromSDLPixel(
+			this uint pixel,
+			ref SDL_Surface surface)
+		{
+			SDL_GetRGBA(
+				pixel,
+				surface.format,
+				out byte r,
+				out byte g,
+				out byte b,
+				out byte a);
+
+			return Color.FromArgb(a, r, g, b);
+		}
+
+#if SAFE_AS_POSSIBLE
+		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+		public struct SDL_TextInputEvent_SAFE
+		{
+			public SDL_EventType type;
+			public UInt32 timestamp;
+			public UInt32 windowID;
+			[MarshalAs(UnmanagedType.ByValTStr, 
+				SizeConst = SDL_TEXTINPUTEVENT_TEXT_SIZE)]
+			public string text;
+		}
+
+		public static SDL_TextEditingEvent_SAFE ToSafe(
+			this SDL_TextEditingEvent @this)
+		{
+			SDL_TextEditingEvent_SAFE result =
+				default(SDL_TextEditingEvent_SAFE);
+
+			GCHandle handle = GCHandle.Alloc(@this, GCHandleType.Pinned);
+
+			try
+			{
+				IntPtr ptr = handle.AddrOfPinnedObject();
+				result = (SDL_TextEditingEvent_SAFE)
+					Marshal.PtrToStructure(
+						ptr, typeof(SDL_TextEditingEvent_SAFE));
+			}
+			finally
+			{
+				handle.Free();
+			}
+
+			return result;
+		}
+
+		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+		public struct SDL_TextEditingEvent_SAFE
+		{
+			public SDL_EventType type;
+			public UInt32 timestamp;
+			public UInt32 windowID;
+			[MarshalAs(UnmanagedType.ByValTStr, 
+				SizeConst = SDL_TEXTEDITINGEVENT_TEXT_SIZE)]
+			public string text;
+			public Int32 start;
+			public Int32 length;
+		}
+
+		public static SDL_TextInputEvent_SAFE ToSafe(
+			this SDL_TextInputEvent_SAFE @this)
+		{
+			SDL_TextInputEvent_SAFE result =
+				default(SDL_TextInputEvent_SAFE);
+
+			GCHandle handle = GCHandle.Alloc(@this, GCHandleType.Pinned);
+
+			try
+			{
+				IntPtr ptr = handle.AddrOfPinnedObject();
+				result = (SDL_TextInputEvent_SAFE)
+					Marshal.PtrToStructure(
+						ptr, typeof(SDL_TextInputEvent_SAFE));
+			}
+			finally
+			{
+				handle.Free();
+			}
+
+			return result;
+		}
+#endif
 	}
 }
